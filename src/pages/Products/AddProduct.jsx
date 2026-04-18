@@ -25,23 +25,18 @@ function cn(...inputs) {
 export const AddProduct = () => {
     const navigate = useNavigate();
     const { id } = useParams();
-    const { settings } = useGlobalState();
+    const { settings, updateSettings } = useGlobalState();
     const isEdit = !!id;
-    const availableUnits = settings?.units || ['Packet', 'Kg', 'Litre', 'Piece', 'Box', 'Bottle'];
+    const availableUnits = settings?.units || [];
 
     const [name, setName] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [description, setDescription] = useState('');
-    const [price, setPrice] = useState('0');
     const [brand, setBrand] = useState('');
-    const [unit, setUnit] = useState(availableUnits[0] || 'Piece');
     const [retailStatus, setRetailStatus] = useState('Active');
     const [businessStatus, setBusinessStatus] = useState('Active');
-    const [retailPricing, setRetailPricing] = useState([{ label: '', price: '', unit: availableUnits[0] || 'Piece', stock: '' }]);
-    const [businessPricing, setBusinessPricing] = useState([{ label: '', price: '', unit: availableUnits[0] || 'Piece', stock: '' }]);
-    const [hsnCode, setHsnCode] = useState('');
-    const [minOrderQty, setMinOrderQty] = useState('1');
-    const [leadTime, setLeadTime] = useState('');
+    const [retailPricing, setRetailPricing] = useState([{ label: '', price: '', unit: '', stock: '' }]);
+    const [businessPricing, setBusinessPricing] = useState([{ label: '', price: '', unit: '', stock: '' }]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fetchingCategories, setFetchingCategories] = useState(true);
@@ -55,6 +50,12 @@ export const AddProduct = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Fetch Settings if not available
+                if (!settings) {
+                    const settingsRes = await api.get('/settings');
+                    updateSettings(settingsRes.data);
+                }
+
                 // Fetch Categories
                 const catRes = await api.get('/categories');
                 setCategories(catRes.data);
@@ -66,17 +67,20 @@ export const AddProduct = () => {
                     setName(p.name || '');
                     setCategoryId(p.category?._id || p.category || '');
                     setDescription(p.description || '');
-                    setPrice(p.price?.toString() || '0');
                     setBrand(p.brand || '');
-                    setUnit(p.unit || availableUnits[0] || 'Piece');
                     setRetailStatus(p.retailStatus || 'Active');
                     setBusinessStatus(p.businessStatus || 'Active');
-                    setRetailPricing(p.retailPricing?.length > 0 ? p.retailPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: p.unit || 'Piece', stock: '' }]);
-                    setBusinessPricing(p.businessPricing?.length > 0 ? p.businessPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: p.unit || 'Piece', stock: '' }]);
-                    setHsnCode(p.hsnCode || '');
-                    setMinOrderQty(p.minOrderQty?.toString() || '1');
-                    setLeadTime(p.leadTime || '');
+                    setRetailPricing(p.retailPricing?.length > 0 ? p.retailPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: availableUnits[0] || '', stock: '' }]);
+                    setBusinessPricing(p.businessPricing?.length > 0 ? p.businessPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: availableUnits[0] || '', stock: '' }]);
                     setImages((p.images || []).map(url => ({ preview: url, file: null })));
+                } else {
+                    // Initialize with first available unit if adding
+                    const settingsRes = !settings ? await api.get('/settings') : null;
+                    const activeUnits = settings?.units || settingsRes?.data?.units || [];
+                    if (activeUnits.length > 0) {
+                        setRetailPricing([{ label: '', price: '', unit: activeUnits[0], stock: '' }]);
+                        setBusinessPricing([{ label: '', price: '', unit: activeUnits[0], stock: '' }]);
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch data', err);
@@ -150,18 +154,13 @@ export const AddProduct = () => {
                 name,
                 category: categoryId,
                 description,
-                price: parseFloat(price),
                 stock: retailPricing.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0) + businessPricing.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0),
                 images: finalImages.length > 0 ? finalImages : ['https://placehold.co/500x500?text=Product'],
                 brand,
-                unit,
                 retailStatus,
                 businessStatus,
-                retailPricing: retailPricing.map(p => ({ label: p.label, price: parseFloat(p.price), unit: p.unit || 'Piece', stock: parseInt(p.stock) || 0 })),
-                businessPricing: businessPricing.map(p => ({ label: p.label, price: parseFloat(p.price), unit: p.unit || 'Piece', stock: parseInt(p.stock) || 0 })),
-                hsnCode,
-                minOrderQty: parseInt(minOrderQty) || 1,
-                leadTime
+                retailPricing: retailPricing.map(p => ({ label: p.label, price: parseFloat(p.price), unit: p.unit || availableUnits[0] || '', stock: parseInt(p.stock) || 0 })),
+                businessPricing: businessPricing.map(p => ({ label: p.label, price: parseFloat(p.price), unit: p.unit || availableUnits[0] || '', stock: parseInt(p.stock) || 0 }))
             };
 
             if (isEdit) {
@@ -269,17 +268,6 @@ export const AddProduct = () => {
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Base Unit</label>
-                                <select
-                                    value={unit}
-                                    onChange={(e) => setUnit(e.target.value)}
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm appearance-none"
-                                >
-                                    {availableUnits.map(u => (
-                                        <option key={u} value={u}>{u}</option>
-                                    ))}
-                                </select>
                             </div>
 
 
@@ -334,49 +322,8 @@ export const AddProduct = () => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
                     </section>
                     
-                    {/* Specifications Section */}
-                    <section className="space-y-6">
-                        <div className="flex items-center space-x-2 pb-2 border-b border-slate-100">
-                            <Plus className="w-5 h-5 text-green-600" />
-                            <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">Product Specifications</h4>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">HSN Code</label>
-                                <input
-                                    type="text"
-                                    value={hsnCode}
-                                    onChange={(e) => setHsnCode(e.target.value)}
-                                    placeholder="e.g. 64041190"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Min. Order Qty</label>
-                                <input
-                                    type="number"
-                                    value={minOrderQty}
-                                    onChange={(e) => setMinOrderQty(e.target.value)}
-                                    placeholder="1"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Lead Time</label>
-                                <input
-                                    type="text"
-                                    value={leadTime}
-                                    onChange={(e) => setLeadTime(e.target.value)}
-                                    placeholder="e.g. 2-4 Days"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
-                                />
-                            </div>
-                        </div>
-                    </section>
 
                     {/* Pricing Tiers Side-by-Side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6">
@@ -389,7 +336,7 @@ export const AddProduct = () => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setRetailPricing([...retailPricing, { label: '', price: '', unit: availableUnits[0] || 'Piece', stock: '' }])}
+                                    onClick={() => setRetailPricing([...retailPricing, { label: '', price: '', unit: availableUnits[0] || '', stock: '' }])}
                                     className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg font-bold text-xs hover:bg-blue-100 transition-all"
                                 >
                                     <Plus className="w-3 h-3" />
@@ -403,7 +350,7 @@ export const AddProduct = () => {
                                         <div className="space-y-1 text-center">
                                             <label className="text-[10px] font-black text-slate-500 uppercase">Unit</label>
                                             <select
-                                                value={tier.unit || availableUnits[0] || 'Piece'}
+                                                value={tier.unit || availableUnits[0] || ''}
                                                 onChange={(e) => {
                                                     const newPricing = [...retailPricing];
                                                     newPricing[index].unit = e.target.value;
@@ -481,7 +428,7 @@ export const AddProduct = () => {
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() => setBusinessPricing([...businessPricing, { label: '', price: '', unit: availableUnits[0] || 'Piece', stock: '' }])}
+                                    onClick={() => setBusinessPricing([...businessPricing, { label: '', price: '', unit: availableUnits[0] || '', stock: '' }])}
                                     className="flex items-center space-x-1 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg font-bold text-xs hover:bg-orange-100 transition-all"
                                 >
                                     <Plus className="w-3 h-3" />
@@ -495,7 +442,7 @@ export const AddProduct = () => {
                                         <div className="space-y-1 text-center">
                                             <label className="text-[10px] font-black text-slate-500 uppercase">Unit</label>
                                             <select
-                                                value={tier.unit || availableUnits[0] || 'Piece'}
+                                                value={tier.unit || availableUnits[0] || ''}
                                                 onChange={(e) => {
                                                     const newPricing = [...businessPricing];
                                                     newPricing[index].unit = e.target.value;

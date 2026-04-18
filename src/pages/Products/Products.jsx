@@ -34,7 +34,7 @@ export const Products = () => {
             if (products.length === 0) setLoading(true);
             try {
                 const { data } = await api.get('/products');
-                updateProducts(data);
+                updateProducts(data.products);
             } catch (err) {
                 setError('Failed to load products');
             } finally {
@@ -54,7 +54,7 @@ export const Products = () => {
         setLoading(true);
         try {
             const { data } = await api.get('/products');
-            updateProducts(data);
+            updateProducts(data.products);
         } catch (err) {
             setError('Failed to refresh products');
         } finally {

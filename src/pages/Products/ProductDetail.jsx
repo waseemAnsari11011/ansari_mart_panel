@@ -203,7 +203,6 @@ export const ProductDetail = () => {
                         {[
                             { label: 'Inventory', value: `${product.stock} Units`, icon: Package, color: 'text-orange-500' },
                             { label: 'Category', value: product.category?.name || 'Uncategorized', icon: Tag, color: 'text-purple-500' },
-                            { label: 'Base Unit', value: product.unit || 'Piece', icon: Truck, color: 'text-blue-500' },
                             { label: 'Brand Name', value: product.brand || 'General', icon: CheckCircle2, color: 'text-green-500' }
                         ].map((spec, i) => (
                             <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:bg-slate-50 transition-colors">
@@ -259,8 +258,7 @@ export const ProductDetail = () => {
                                 ) : (
                                     <div className="p-8 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 text-center">
                                         <IndianRupee className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                                        <p className="text-sm font-black text-slate-400">Fixed Retail Price</p>
-                                        <p className="text-2xl font-black text-slate-900 mt-2">₹{product.price}</p>
+                                        <p className="text-sm font-black text-slate-400">No Retail Prices Configured</p>
                                     </div>
                                 )}
                             </div>

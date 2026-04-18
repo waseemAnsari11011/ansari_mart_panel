@@ -77,7 +77,7 @@ export const Receipt = ({ order, isBulk = false }) => {
                         <span className="text-center">QTY</span>
                         <span className="text-right">PRICE</span>
                     </div>
-                    {(order.orderItems || order.items || []).map((item, idx) => (
+                    {(order.orderItems || order.items || []).filter(item => (item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1)) > 0).map((item, idx) => (
                         <div key={idx} className="grid grid-cols-[1fr_20px_60px] gap-1 items-start">
                             <span className="break-words uppercase">{item.name || item.product?.name}</span>
                             <span className="text-center">{item.qty || item.quantity}</span>

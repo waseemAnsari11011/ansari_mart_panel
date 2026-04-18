@@ -234,19 +234,48 @@ export const UserDetail = () => {
                                         <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.businessType || "Not specified"}</p>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GST Number</p>
-                                        <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.gstNo}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Business Address (KYC)</p>
+                                        <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100 leading-relaxed">{user.businessDetails.businessAddress || "Not provided"}</p>
                                     </div>
+                                    {user.businessDetails.shopPhoto && (
+                                        <div className="mt-2 text-left">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-left">Shop Photo Preview</p>
+                                            <a 
+                                                href={user.businessDetails.shopPhoto} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="relative group block w-full h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in"
+                                            >
+                                                <img 
+                                                    src={user.businessDetails.shopPhoto} 
+                                                    alt="Shop" 
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Store className="w-6 h-6 text-white" />
+                                                    <span className="ml-2 text-white text-[10px] font-black uppercase tracking-wider">Click to view</span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                    )}
+                                    {user.businessDetails.gstNo && (
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GST Number</p>
+                                            <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.gstNo}</p>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-4">
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">PAN Number</p>
-                                        <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.panNo}</p>
-                                    </div>
+                                    {user.businessDetails.panNo && (
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">PAN Number</p>
+                                            <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.panNo}</p>
+                                        </div>
+                                    )}
                                     <div className="p-5 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                                         <p className="text-[11px] font-black text-slate-500 mb-3 uppercase tracking-wider">Verification Documents</p>
                                         <div className="flex flex-col gap-3">
-                                            {user.businessDetails.gstFile ? (
+                                            {user.businessDetails.gstFile && (
                                                 <a 
                                                     href={user.businessDetails.gstFile} 
                                                     target="_blank" 
@@ -256,11 +285,9 @@ export const UserDetail = () => {
                                                     <ShieldCheck className="w-3 h-3" />
                                                     <span>View GST Document</span>
                                                 </a>
-                                            ) : (
-                                                <p className="text-[10px] text-slate-400 italic">No GST document uploaded</p>
                                             )}
                                             
-                                            {user.businessDetails.panFile ? (
+                                            {user.businessDetails.panFile && (
                                                 <a 
                                                     href={user.businessDetails.panFile} 
                                                     target="_blank" 
@@ -270,8 +297,10 @@ export const UserDetail = () => {
                                                     <CreditCard className="w-3 h-3" />
                                                     <span>View PAN Card</span>
                                                 </a>
-                                            ) : (
-                                                <p className="text-[10px] text-slate-400 italic">No PAN document uploaded</p>
+                                            )}
+
+                                            {!user.businessDetails.gstFile && !user.businessDetails.panFile && !user.businessDetails.shopPhoto && (
+                                                <p className="text-[10px] text-slate-400 italic">No verification documents uploaded</p>
                                             )}
                                         </div>
                                     </div>

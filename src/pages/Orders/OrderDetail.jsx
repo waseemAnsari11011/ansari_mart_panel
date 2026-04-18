@@ -63,12 +63,23 @@ export const OrderDetail = () => {
             : '';
 
         let itemsText = '';
-        const itemsList = order.orderItems || order.items || [];
+        const itemsList = (order.orderItems || order.items || []).filter(item => {
+            const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+            return q > 0;
+        });
         if (itemsList.length > 0) {
-            itemsText = itemsList.map(item => `- ${item.name || item.product?.name} (x${item.qty || item.quantity || 1}) - ₹${Math.round(item.price || item.product?.price)}`).join('\n');
+            itemsText = itemsList.map(item => {
+                const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                const p = item.price || item.product?.price || 0;
+                return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+            }).join('\n');
         }
 
-        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const locationLink = order.shippingAddress?.latitude && order.shippingAddress?.longitude
+            ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
+            : '';
+
+        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
 
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
         window.open(whatsappUrl, '_blank');
@@ -91,6 +102,42 @@ export const OrderDetail = () => {
             alert('Status updated successfully');
         } catch (err) {
             alert('Failed to update status');
+        }
+    };
+
+    const updateQuantity = async (itemId, newQty) => {
+        const previousOrder = order;
+        
+        // Optimistically update local state for instant UI feedback
+        const optimisticOrderItems = order.orderItems.map(item => {
+            if (item._id === itemId) {
+                return { ...item, qty: newQty };
+            }
+            return item;
+        });
+
+        const newTotal = optimisticOrderItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        
+        const optimisticOrder = {
+            ...order,
+            orderItems: optimisticOrderItems,
+            totalPrice: newTotal
+        };
+
+        setOrder(optimisticOrder);
+
+        try {
+            const { data } = await api.put(`/orders/${id}/update-quantity`, { itemId, qty: newQty });
+            setOrder(data);
+            
+            // Update global cache
+            if (orders.length > 0) {
+                const updatedOrders = orders.map(o => o._id === id ? data : o);
+                updateOrders(updatedOrders);
+            }
+        } catch (err) {
+            setOrder(previousOrder); // Revert on failure
+            alert(err.response?.data?.message || 'Failed to update quantity');
         }
     };
 
@@ -226,7 +273,25 @@ export const OrderDetail = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5 text-center text-sm font-black text-slate-700">₹{Math.round(item.price)}</td>
-                                                <td className="px-8 py-5 text-center text-sm font-black text-slate-700">x{item.qty}</td>
+                                                <td className="px-8 py-5 text-center flex justify-center">
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={item.qty}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            if (val === "" || /^\d+$/.test(val)) {
+                                                                updateQuantity(item._id, Number(val));
+                                                            }
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            if (e.target.value === "") {
+                                                                updateQuantity(item._id, 1);
+                                                            }
+                                                        }}
+                                                        className="w-20 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                    />
+                                                </td>
                                                 <td className="px-8 py-5 text-right text-sm font-black text-slate-900">₹{Math.round(item.price * item.qty)}</td>
                                             </tr>
                                         ))}

@@ -34,14 +34,18 @@ const statusTabs = ['B2C', 'B2B', 'Pending', 'Confirmed', 'Shipped', 'Delivered'
 
 const BulkPrintSection = ({ orders }) => {
     const containerRef = useRef(null);
-    const [totalHeight, setTotalHeight] = useState('auto');
+    const [pageHeight, setPageHeight] = useState('auto');
 
     useEffect(() => {
         if (containerRef.current) {
             const timer = setTimeout(() => {
-                const height = containerRef.current.offsetHeight;
-                if (height > 0) {
-                    setTotalHeight(height + 40);
+                const receipts = containerRef.current.querySelectorAll('.receipt-container');
+                let max = 0;
+                receipts.forEach(r => {
+                    if (r.offsetHeight > max) max = r.offsetHeight;
+                });
+                if (max > 0) {
+                    setPageHeight(Math.ceil(max) + 20);
                 }
             }, 300);
             return () => clearTimeout(timer);
@@ -55,14 +59,15 @@ const BulkPrintSection = ({ orders }) => {
             top: '0', 
             width: '80mm',
             background: 'white',
-            visibility: 'visible' 
+            visibility: 'hidden',
+            zIndex: -9999
         }}>
             <style dangerouslySetInnerHTML={{
                 __html: `
                 @media print {
                     @page {
                         margin: 0;
-                        size: 80mm ${totalHeight === 'auto' ? 'auto' : `${totalHeight}px`};
+                        size: 80mm ${pageHeight === 'auto' ? 'auto' : `${pageHeight}px`};
                     }
                     html, body {
                         width: 80mm !important;
@@ -86,9 +91,13 @@ const BulkPrintSection = ({ orders }) => {
                         background: #ffffff !important;
                         position: static !important;
                         visibility: visible !important;
-                        page-break-inside: avoid !important;
-                        break-inside: avoid !important;
-                        border-bottom: 2px dashed #cccccc !important;
+                        page-break-after: always !important;
+                        break-after: page !important;
+                        border-bottom: none !important;
+                    }
+                    .receipt-container:last-child {
+                        page-break-after: auto !important;
+                        break-after: auto !important;
                     }
                 }
             `}} />
@@ -221,12 +230,23 @@ export const Orders = () => {
             : '';
 
         let itemsText = '';
-        const itemsList = order.orderItems || order.items || [];
+        const itemsList = (order.orderItems || order.items || []).filter(item => {
+            const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+            return q > 0;
+        });
         if (itemsList.length > 0) {
-            itemsText = itemsList.map(item => `- ${item.name || item.product?.name} (x${item.qty || item.quantity || 1}) - ₹${Math.round(item.price || item.product?.price)}`).join('\n');
+            itemsText = itemsList.map(item => {
+                const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                const p = item.price || item.product?.price || 0;
+                return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+            }).join('\n');
         }
 
-        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const locationLink = order.shippingAddress?.latitude && order.shippingAddress?.longitude
+            ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
+            : '';
+
+        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
 
         // Open WhatsApp
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
@@ -257,12 +277,23 @@ export const Orders = () => {
                 : '';
 
             let itemsText = '';
-            const itemsList = order.orderItems || order.items || [];
+            const itemsList = (order.orderItems || order.items || []).filter(item => {
+                const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                return q > 0;
+            });
             if (itemsList.length > 0) {
-                itemsText = itemsList.map(item => `- ${item.name || item.product?.name} (x${item.qty || item.quantity || 1}) - ₹${Math.round(item.price || item.product?.price)}`).join('\n');
+                itemsText = itemsList.map(item => {
+                    const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                    const p = item.price || item.product?.price || 0;
+                    return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+                }).join('\n');
             }
 
-            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}\n*Total:* ₹${Math.round(order.totalPrice)}\n\n`;
+            const locationLink = order.shippingAddress?.latitude && order.shippingAddress?.longitude
+                ? `\n*Location:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
+                : '';
+
+            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}${locationLink}\n*Total:* ₹${Math.round(order.totalPrice)}\n\n`;
             if (index < selectedOrdersData.length - 1) {
                 combinedMessage += `--------------------------------\n\n`;
             }
