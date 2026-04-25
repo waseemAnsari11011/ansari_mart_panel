@@ -12,6 +12,7 @@ import { Orders } from './pages/Orders/Orders'
 import { OrderDetail } from './pages/Orders/OrderDetail'
 import { Settings } from './pages/Settings/Settings'
 import Login from './pages/Auth/Login'
+import { DeliveryZones } from './pages/DeliveryZones/DeliveryZones'
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -47,6 +48,7 @@ function App() {
         <Route path="products/edit/:id" element={<AddProduct />} />
         <Route path="orders" element={<Orders />} />
         <Route path="orders/:id" element={<OrderDetail />} />
+        <Route path="delivery-zones" element={<DeliveryZones />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -9,7 +9,8 @@ import {
   ShoppingBag,
   Settings,
   ChevronRight,
-  LogOut
+  LogOut,
+  Map
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -27,6 +28,7 @@ const navItems = [
   { name: 'Categories', icon: Layers, path: '/categories' },
   { name: 'Products', icon: Package, path: '/products' },
   { name: 'Orders', icon: ShoppingBag, path: '/orders' },
+  { name: 'Delivery Zones', icon: Map, path: '/delivery-zones' },
   { name: 'Settings', icon: Settings, path: '/settings' },
 ];
 
