@@ -88,6 +88,8 @@ export const ProductDetail = () => {
         );
     }
 
+    const totalStock = [...(product?.retailPricing || []), ...(product?.businessPricing || [])].reduce((acc, curr) => acc + (curr.stock || 0), 0);
+
     const PricingTier = ({ tier, type }) => (
         <div className={cn(
             "p-5 rounded-2xl border transition-all hover:shadow-md",
@@ -117,7 +119,7 @@ export const ProductDetail = () => {
                         "absolute top-0 left-0 h-full rounded-full transition-all duration-1000",
                         type === 'business' ? 'bg-blue-500' : 'bg-green-500'
                     )} 
-                    style={{ width: `${Math.min((tier.stock / (product.stock || 1)) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((tier.stock / (totalStock || 1)) * 100, 100)}%` }}
                 />
             </div>
         </div>
@@ -201,7 +203,7 @@ export const ProductDetail = () => {
                            Product Specifications
                        </h4>
                         {[
-                            { label: 'Inventory', value: `${product.stock} Units`, icon: Package, color: 'text-orange-500' },
+                            { label: 'MRP', value: `₹${product.mrp || 0}`, icon: IndianRupee, color: 'text-blue-500' },
                             { label: 'Category', value: product.category?.name || 'Uncategorized', icon: Tag, color: 'text-purple-500' },
                             { label: 'Brand Name', value: product.brand || 'General', icon: CheckCircle2, color: 'text-green-500' }
                         ].map((spec, i) => (

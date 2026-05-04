@@ -33,6 +33,7 @@ export const AddProduct = () => {
     const [categoryId, setCategoryId] = useState('');
     const [description, setDescription] = useState('');
     const [brand, setBrand] = useState('');
+    const [mrp, setMrp] = useState('');
     const [retailStatus, setRetailStatus] = useState('Active');
     const [businessStatus, setBusinessStatus] = useState('Active');
     const [retailPricing, setRetailPricing] = useState([{ label: '', price: '', unit: '', stock: '' }]);
@@ -68,6 +69,7 @@ export const AddProduct = () => {
                     setCategoryId(p.category?._id || p.category || '');
                     setDescription(p.description || '');
                     setBrand(p.brand || '');
+                    setMrp(p.mrp || '');
                     setRetailStatus(p.retailStatus || 'Active');
                     setBusinessStatus(p.businessStatus || 'Active');
                     setRetailPricing(p.retailPricing?.length > 0 ? p.retailPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: availableUnits[0] || '', stock: '' }]);
@@ -154,9 +156,9 @@ export const AddProduct = () => {
                 name,
                 category: categoryId,
                 description,
-                stock: retailPricing.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0) + businessPricing.reduce((acc, curr) => acc + (parseInt(curr.stock) || 0), 0),
                 images: finalImages.length > 0 ? finalImages : ['https://placehold.co/500x500?text=Product'],
                 brand,
+                mrp: parseFloat(mrp) || 0,
                 retailStatus,
                 businessStatus,
                 retailPricing: retailPricing.map(p => ({ label: p.label, price: parseFloat(p.price), unit: p.unit || availableUnits[0] || '', stock: parseInt(p.stock) || 0 })),
@@ -265,6 +267,21 @@ export const AddProduct = () => {
                                     value={brand}
                                     onChange={(e) => setBrand(e.target.value)}
                                     placeholder="e.g. Horlicks"
+                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700">MRP (₹)</label>
+                                <input
+                                    type="text"
+                                    value={mrp}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === '' || /^\d*\.?\d*$/.test(val)) {
+                                            setMrp(val);
+                                        }
+                                    }}
+                                    placeholder="e.g. 500"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
                                 />
                             </div>

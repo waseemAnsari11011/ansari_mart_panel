@@ -155,7 +155,7 @@ export const Products = () => {
                                 <tr className="bg-slate-50/50">
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Product Details</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Category</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Stock</th>
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">MRP (₹)</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Retail Status</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Business Status</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
@@ -183,11 +183,8 @@ export const Products = () => {
                                             <span className="text-sm font-bold text-slate-700">{product.category?.name || 'Uncategorized'}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={cn(
-                                                "text-sm font-black",
-                                                product.stock < 10 ? "text-red-600" : "text-slate-900"
-                                            )}>
-                                                {product.stock}
+                                            <span className="text-sm font-black text-slate-900">
+                                                ₹{product.mrp || 0}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
