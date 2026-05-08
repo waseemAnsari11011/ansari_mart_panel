@@ -26,15 +26,18 @@ export const Products = () => {
     const navigate = useNavigate();
     const { products, updateProducts, lastFetched } = useGlobalState();
     const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(products.length === 0);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const loadProducts = async () => {
-            if (products.length === 0) setLoading(true);
+            setLoading(true);
             try {
-                const { data } = await api.get('/products');
+                const { data } = await api.get(`/products?page=${page}&limit=20`);
                 updateProducts(data.products);
+                setTotalPages(data.pages);
             } catch (err) {
                 setError('Failed to load products');
             } finally {
@@ -42,19 +45,15 @@ export const Products = () => {
             }
         };
 
-        const shouldFetch = products.length === 0 || (Date.now() - lastFetched.products > 5 * 60 * 1000);
-        if (shouldFetch) {
-            loadProducts();
-        } else {
-            setLoading(false);
-        }
-    }, [products.length, updateProducts, lastFetched.products]);
+        loadProducts();
+    }, [page, updateProducts]);
 
     const handleRefresh = async () => {
         setLoading(true);
         try {
-            const { data } = await api.get('/products');
+            const { data } = await api.get(`/products?page=${page}&limit=20`);
             updateProducts(data.products);
+            setTotalPages(data.pages);
         } catch (err) {
             setError('Failed to refresh products');
         } finally {
@@ -239,6 +238,29 @@ export const Products = () => {
                             </tbody>
                         </table>
                     </div>
+                    {totalPages > 1 && (
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                            <p className="text-xs font-bold text-slate-500">
+                                Page {page} of {totalPages}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={page === totalPages}
+                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

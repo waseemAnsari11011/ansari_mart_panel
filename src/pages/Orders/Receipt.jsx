@@ -53,7 +53,7 @@ export const Receipt = ({ order, isBulk = false }) => {
                     <h1 className="text-xl font-bold tracking-tighter uppercase mb-1">Ansari Mart</h1>
                     <p className="font-bold">Premium Quality Grocery</p>
                     <p>Sector-63, Noida, UP</p>
-                    <p>Ph: +91 98765 43210</p>
+                    <p>Ph: +91 8707626377</p>
                     <div className="border-b border-dashed border-black/40 my-3"></div>
                     <div className="flex justify-between text-[9px] font-bold">
                         <span>CUST: {order.shippingAddress?.name || order.admin?.name || 'CASH CUSTOMER'}</span>

@@ -671,7 +671,7 @@ export const Orders = () => {
                                                         <ShoppingBag className="w-5 h-5" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black text-slate-900">#{order._id.substring(order._id.length - 8)}</p>
+                                                        <p className="text-sm font-black text-slate-900 uppercase">#{order._id.substring(order._id.length - 8)}</p>
                                                         <span className={cn(
                                                             "text-[9px] font-black uppercase px-1.5 py-0.5 rounded",
                                                             order.type === 'Business' ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     TrendingUp,
     ShoppingBag,
@@ -133,6 +134,7 @@ const FilterDropdown = ({ isOpen, onClose, onDateSelect }) => {
 };
 
 export const Dashboard = () => {
+    const navigate = useNavigate();
     const { dashboardData, updateDashboardData, lastFetched } = useGlobalState();
     const [activeFilter, setActiveFilter] = useState(null);
     const [loading, setLoading] = useState(!dashboardData);
@@ -288,7 +290,12 @@ export const Dashboard = () => {
                         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                                 <h3 className="text-lg font-black text-slate-900">Recent Orders</h3>
-                                <button className="text-sm font-bold text-green-600 hover:text-green-700">View All</button>
+                                <button 
+                                    onClick={() => navigate('/orders')}
+                                    className="text-sm font-bold text-green-600 hover:text-green-700"
+                                >
+                                    View All
+                                </button>
                             </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left">
@@ -315,8 +322,15 @@ export const Dashboard = () => {
                                                     <td className="px-6 py-4 text-sm font-bold text-slate-900">#{order._id.substring(order._id.length - 8).toUpperCase()}</td>
                                                     <td className="px-6 py-4">
                                                         <div className="flex flex-col">
-                                                            <span className="text-sm font-bold text-slate-900">{order.admin?.name || 'Customer'}</span>
-                                                            <span className="text-[11px] font-bold text-slate-400">{order.type || 'Retail'}</span>
+                                                            <span className="text-[13px] font-black text-slate-900 uppercase tracking-tight">
+                                                                {order.shippingAddress?.name || order.admin?.name || 'Customer'}
+                                                            </span>
+                                                            <span className={cn(
+                                                                "text-[9px] font-black uppercase px-1.5 py-0.5 rounded w-fit mt-1",
+                                                                order.type === 'Business' ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"
+                                                            )}>
+                                                                {order.type || 'Retail'}
+                                                            </span>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm font-bold text-slate-900">₹{order.totalPrice}</td>
@@ -326,7 +340,10 @@ export const Dashboard = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
-                                                        <button className="p-2 hover:bg-slate-200 rounded-lg transition-colors group-hover:translate-x-1 duration-200">
+                                                        <button 
+                                                            onClick={() => navigate(`/orders/${order._id}`)}
+                                                            className="p-2 hover:bg-slate-200 rounded-lg transition-colors group-hover:translate-x-1 duration-200"
+                                                        >
                                                             <ChevronRight className="w-4 h-4 text-slate-400" />
                                                         </button>
                                                     </td>
