@@ -133,6 +133,10 @@ export const AddProduct = () => {
         const businessError = validatePricing(businessPricing, 'Business');
         if (businessError) return setError(businessError);
 
+        if (!mrp || parseFloat(mrp) <= 0) {
+            return setError('MRP is required and must be greater than 0');
+        }
+
         setLoading(true);
 
         try {
@@ -271,7 +275,7 @@ export const AddProduct = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">MRP (₹)</label>
+                                <label className="text-sm font-bold text-slate-700">MRP (₹) <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     value={mrp}
@@ -283,6 +287,7 @@ export const AddProduct = () => {
                                     }}
                                     placeholder="e.g. 500"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
+                                    required
                                 />
                             </div>
                             </div>

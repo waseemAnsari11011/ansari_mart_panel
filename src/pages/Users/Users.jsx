@@ -84,6 +84,22 @@ export const UsersManagement = ({ type }) => {
             }
         } catch (error) {
             console.error('Error updating status:', error);
+            alert(error.response?.data?.message || 'Error updating status');
+        }
+    };
+
+    const handleVerifyKYC = async (id, newKycStatus) => {
+        try {
+            const { data } = await api.patch(`/users/${id}/verify-kyc`, { status: newKycStatus });
+            const updatedUsers = users.map(u => u._id === id ? { 
+                ...u, 
+                businessDetails: data.user.businessDetails,
+                status: data.user.status 
+            } : u);
+            updateBusinessUsers(updatedUsers);
+        } catch (error) {
+            console.error('Error updating KYC status:', error);
+            alert(error.response?.data?.message || 'Error updating KYC status');
         }
     };
 
@@ -169,6 +185,9 @@ export const UsersManagement = ({ type }) => {
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Contact Info</th>
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Join Date</th>
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Status</th>
+                                {type === 'Business' && (
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">KYC Status</th>
+                                )}
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
@@ -204,12 +223,22 @@ export const UsersManagement = ({ type }) => {
                                     <td className="px-6 py-4">
                                         <span className={cn(
                                             "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider",
-                                            user.status === 'Active' ? 'bg-green-100 text-green-700' :
-                                                user.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                                            user.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                                         )}>
-                                            {user.status}
+                                            {user.status === 'Blocked' ? 'Blocked' : 'Active'}
                                         </span>
                                     </td>
+                                    {type === 'Business' && (
+                                        <td className="px-6 py-4">
+                                            <span className={cn(
+                                                "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider",
+                                                user.businessDetails?.verificationStatus === 'Approved' ? 'bg-green-100 text-green-700' :
+                                                    user.businessDetails?.verificationStatus === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                                            )}>
+                                                {user.businessDetails?.verificationStatus || 'Pending'}
+                                            </span>
+                                        </td>
+                                    )}
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end space-x-2">
                                             <button
@@ -233,10 +262,12 @@ export const UsersManagement = ({ type }) => {
                                                     <Ban className="w-4 h-4" />
                                                 </button>
                                             )}
-                                            {user.type === 'Business' && user.status === 'Pending' && (
+                                             {user.type === 'Business' && user.businessDetails?.verificationStatus === 'Pending' && (
                                                 <button 
-                                                    onClick={() => handleUpdateStatus(user._id, 'Active')}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                    disabled={!user.businessDetails?.gstFile && !user.businessDetails?.panFile && !user.businessDetails?.shopPhoto}
+                                                    onClick={() => handleVerifyKYC(user._id, 'Approved')}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all disabled:opacity-30"
+                                                    title={(!user.businessDetails?.gstFile && !user.businessDetails?.panFile && !user.businessDetails?.shopPhoto) ? "No documents uploaded" : "Verify KYC"}
                                                 >
                                                     <ShieldCheck className="w-4 h-4" />
                                                 </button>

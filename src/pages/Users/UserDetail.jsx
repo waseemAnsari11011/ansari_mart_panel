@@ -56,6 +56,20 @@ export const UserDetail = () => {
             await fetchUserDetails();
         } catch (error) {
             console.error('Error updating status:', error);
+            alert(error.response?.data?.message || 'Error updating status');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleVerifyKYC = async (newKycStatus) => {
+        try {
+            setActionLoading(true);
+            const { data } = await api.patch(`/users/${id}/verify-kyc`, { status: newKycStatus });
+            setUserData(prev => ({ ...prev, user: data.user }));
+        } catch (error) {
+            console.error('Error updating KYC status:', error);
+            alert(error.response?.data?.message || 'Error updating KYC status');
         } finally {
             setActionLoading(false);
         }
@@ -97,10 +111,9 @@ export const UserDetail = () => {
                             <h2 className="text-2xl font-black text-slate-900">{user.name}</h2>
                             <span className={cn(
                                 "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider",
-                                user.status === 'Active' ? 'bg-green-100 text-green-700' :
-                                    user.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700'
+                                user.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                             )}>
-                                {user.status}
+                                {user.status === 'Blocked' ? 'Blocked' : 'Active'}
                             </span>
                         </div>
                         <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">#{user._id?.slice(-8).toUpperCase()} • {user.type} Customer</p>
@@ -127,11 +140,17 @@ export const UserDetail = () => {
                             <span>{actionLoading ? 'Updating...' : 'Block User'}</span>
                         </button>
                     )}
-                    {user.type === 'Business' && (user.status === 'Pending' || user.businessDetails?.verificationStatus === 'Pending') && (
+                    {user.type === 'Business' && (user.businessDetails?.verificationStatus === 'Pending') && (
                         <button 
-                            disabled={actionLoading}
-                            onClick={() => handleUpdateStatus('Active')}
-                            className="px-6 py-2.5 bg-green-600 text-white rounded-xl font-black text-sm shadow-lg shadow-green-600/20 hover:bg-green-700 transition-all flex items-center space-x-2 disabled:opacity-50"
+                            disabled={actionLoading || (!user.businessDetails?.gstFile && !user.businessDetails?.panFile && !user.businessDetails?.shopPhoto)}
+                            onClick={() => handleVerifyKYC('Approved')}
+                            className={cn(
+                                "px-6 py-2.5 rounded-xl font-black text-sm shadow-lg transition-all flex items-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed",
+                                (!user.businessDetails?.gstFile && !user.businessDetails?.panFile && !user.businessDetails?.shopPhoto) 
+                                ? "bg-slate-200 text-slate-500 shadow-none" 
+                                : "bg-green-600 text-white shadow-green-600/20 hover:bg-green-700"
+                            )}
+                            title={(!user.businessDetails?.gstFile && !user.businessDetails?.panFile && !user.businessDetails?.shopPhoto) ? "Upload documents to verify" : "Verify Business"}
                         >
                             <ShieldCheck className="w-4 h-4" />
                             <span>{actionLoading ? 'Verifying...' : 'Verify Business'}</span>
@@ -258,14 +277,14 @@ export const UserDetail = () => {
                                             </a>
                                         </div>
                                     )}
+                                </div>
+                                <div className="space-y-4">
                                     {user.businessDetails.gstNo && (
                                         <div>
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">GST Number</p>
                                             <p className="text-sm font-bold text-slate-900 bg-slate-50 p-3 rounded-xl border border-slate-100">{user.businessDetails.gstNo}</p>
                                         </div>
                                     )}
-                                </div>
-                                <div className="space-y-4">
                                     {user.businessDetails.panNo && (
                                         <div>
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">PAN Number</p>

@@ -72,11 +72,19 @@ export const Products = () => {
         }
     };
 
-    const filteredProducts = products.filter(p => 
-        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p._id?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products
+        .filter(p => 
+            p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p._id?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            const aMrp = Number(a.mrp || 0);
+            const bMrp = Number(b.mrp || 0);
+            if (aMrp === 0 && bMrp !== 0) return -1;
+            if (aMrp !== 0 && bMrp === 0) return 1;
+            return 0;
+        });
 
     return (
         <div className="space-y-6">
@@ -165,7 +173,10 @@ export const Products = () => {
                                     <tr 
                                         key={product._id} 
                                         onClick={() => navigate(`/products/${product._id}`)}
-                                        className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                                        className={cn(
+                                            "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                                            (Number(product.mrp) === 0 || !product.mrp) && "bg-red-100/80 hover:bg-red-200/80"
+                                        )}
                                     >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center space-x-4">
