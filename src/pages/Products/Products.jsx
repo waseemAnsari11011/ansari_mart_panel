@@ -77,14 +77,7 @@ export const Products = () => {
             p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p._id?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => {
-            const aMrp = Number(a.mrp || 0);
-            const bMrp = Number(b.mrp || 0);
-            if (aMrp === 0 && bMrp !== 0) return -1;
-            if (aMrp !== 0 && bMrp === 0) return 1;
-            return 0;
-        });
+        );
 
     return (
         <div className="space-y-6">

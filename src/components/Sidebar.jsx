@@ -10,7 +10,8 @@ import {
   Settings,
   ChevronRight,
   LogOut,
-  Map
+  Map,
+  LifeBuoy
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,6 +31,7 @@ const navItems = [
   { name: 'Orders', icon: ShoppingBag, path: '/orders' },
   { name: 'Delivery Zones', icon: Map, path: '/delivery-zones' },
   { name: 'Settings', icon: Settings, path: '/settings' },
+  { name: 'Help & Support', icon: LifeBuoy, path: '/help-support' },
 ];
 
 export const Sidebar = () => {

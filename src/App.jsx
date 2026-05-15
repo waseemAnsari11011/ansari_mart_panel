@@ -11,6 +11,7 @@ import { ProductDetail } from './pages/Products/ProductDetail'
 import { Orders } from './pages/Orders/Orders'
 import { OrderDetail } from './pages/Orders/OrderDetail'
 import { Settings } from './pages/Settings/Settings'
+import { HelpSupport } from './pages/HelpSupport/HelpSupport'
 import Login from './pages/Auth/Login'
 import { DeliveryZones } from './pages/DeliveryZones/DeliveryZones'
 
@@ -50,6 +51,7 @@ function App() {
         <Route path="orders/:id" element={<OrderDetail />} />
         <Route path="delivery-zones" element={<DeliveryZones />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="help-support" element={<HelpSupport />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
