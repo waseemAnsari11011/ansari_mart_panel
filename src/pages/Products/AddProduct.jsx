@@ -265,12 +265,12 @@ export const AddProduct = () => {
                                 ></textarea>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-700">Brand</label>
+                                <label className="text-sm font-bold text-slate-700">Weight</label>
                                 <input
                                     type="text"
                                     value={brand}
                                     onChange={(e) => setBrand(e.target.value)}
-                                    placeholder="e.g. Horlicks"
+                                    placeholder="e.g. 500g or 1kg"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all font-medium text-sm"
                                 />
                             </div>

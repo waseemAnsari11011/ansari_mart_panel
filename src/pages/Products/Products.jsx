@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Plus,
     Search,
@@ -29,31 +29,88 @@ export const Products = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState('');
 
+    const productsRef = useRef(products);
     useEffect(() => {
+        productsRef.current = products;
+    }, [products]);
+
+    const lastLoadedSearchTerm = useRef('');
+
+    // Reset to page 1 when search term changes
+    useEffect(() => {
+        setPage(1);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        let active = true;
+
         const loadProducts = async () => {
-            setLoading(true);
+            // Guard: If page > 1 but search term has changed, a page reset to 1 is already scheduled.
+            // Skip this fetch to prevent mismatched page results.
+            if (page > 1 && searchTerm !== lastLoadedSearchTerm.current) {
+                return;
+            }
+
+            if (page === 1) {
+                setLoading(true);
+            } else {
+                setLoadingMore(true);
+            }
+            setError('');
             try {
-                const { data } = await api.get(`/products?page=${page}&limit=20`);
-                updateProducts(data.products);
+                let url = `/products?page=${page}&limit=20`;
+                if (searchTerm) {
+                    url += `&search=${encodeURIComponent(searchTerm)}`;
+                }
+                const { data } = await api.get(url);
+                
+                if (!active) return;
+
+                if (page === 1) {
+                    updateProducts(data.products);
+                } else {
+                    updateProducts([...productsRef.current, ...data.products]);
+                }
                 setTotalPages(data.pages);
+                lastLoadedSearchTerm.current = searchTerm;
             } catch (err) {
-                setError('Failed to load products');
+                if (active) {
+                    setError(page === 1 ? 'Failed to load products' : 'Failed to load more products');
+                }
             } finally {
-                setLoading(false);
+                if (active) {
+                    setLoading(false);
+                    setLoadingMore(false);
+                }
             }
         };
 
-        loadProducts();
-    }, [page, updateProducts]);
+        const debounceTimer = setTimeout(() => {
+            loadProducts();
+        }, page === 1 ? 500 : 0); // debounced search only, immediate scroll pagination loading
+
+        return () => {
+            active = false;
+            clearTimeout(debounceTimer);
+        };
+    }, [page, searchTerm, updateProducts]);
 
     const handleRefresh = async () => {
+        setPage(1);
         setLoading(true);
+        setError('');
         try {
-            const { data } = await api.get(`/products?page=${page}&limit=20`);
+            let url = `/products?page=1&limit=20`;
+            if (searchTerm) {
+                url += `&search=${encodeURIComponent(searchTerm)}`;
+            }
+            const { data } = await api.get(url);
             updateProducts(data.products);
             setTotalPages(data.pages);
+            lastLoadedSearchTerm.current = searchTerm;
         } catch (err) {
             setError('Failed to refresh products');
         } finally {
@@ -72,12 +129,21 @@ export const Products = () => {
         }
     };
 
-    const filteredProducts = products
-        .filter(p => 
-            p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p._id?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+    const observer = useRef();
+    const lastProductElementRef = useCallback((node) => {
+        if (loading || loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+
+        observer.current = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && page < totalPages) {
+                setPage((prevPage) => prevPage + 1);
+            }
+        });
+
+        if (node) observer.current.observe(node);
+    }, [loading, loadingMore, page, totalPages]);
+
+    const filteredProducts = products;
 
     return (
         <div className="space-y-6">
@@ -110,7 +176,7 @@ export const Products = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                         type="text"
-                        placeholder="Search by name, brand or SKU..."
+                        placeholder="Search by name, weight or SKU..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
@@ -242,29 +308,20 @@ export const Products = () => {
                             </tbody>
                         </table>
                     </div>
-                    {totalPages > 1 && (
-                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-                            <p className="text-xs font-bold text-slate-500">
-                                Page {page} of {totalPages}
-                            </p>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all"
-                                >
-                                    Previous
-                                </button>
-                                <button
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={page === totalPages}
-                                    className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-600 disabled:opacity-50 hover:bg-slate-50 transition-all"
-                                >
-                                    Next
-                                </button>
+                    {/* Infinite Scroll Trigger Spacer */}
+                    <div ref={lastProductElementRef} className="py-8 flex flex-col justify-center items-center gap-2">
+                        {loadingMore && (
+                            <div className="flex items-center space-x-2 text-green-600 font-bold text-sm bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm animate-pulse">
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                <span>Loading more products...</span>
                             </div>
-                        </div>
-                    )}
+                        )}
+                        {!loadingMore && page >= totalPages && products.length > 0 && (
+                            <p className="text-slate-400 font-bold text-sm bg-slate-50 border border-slate-200 px-5 py-2.5 rounded-2xl shadow-inner">
+                                ✨ You've reached the end of the inventory. Total: {products.length} products.
+                            </p>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

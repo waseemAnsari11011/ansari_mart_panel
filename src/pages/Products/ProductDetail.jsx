@@ -155,7 +155,7 @@ export const ProductDetail = () => {
                             </div>
                         </div>
                         <div className="flex items-center space-x-2 text-slate-400 font-bold text-sm">
-                            <span className="uppercase tracking-widest text-xs text-green-600/70">{product.brand || 'No Brand'}</span>
+                            <span className="uppercase tracking-widest text-xs text-green-600/70">{product.brand || 'No Weight Info'}</span>
                             <span>•</span>
                             <span>SKU: {product._id?.substring(product._id.length - 8).toUpperCase()}</span>
                         </div>
@@ -205,7 +205,7 @@ export const ProductDetail = () => {
                         {[
                             { label: 'MRP', value: `₹${product.mrp || 0}`, icon: IndianRupee, color: 'text-blue-500' },
                             { label: 'Category', value: product.category?.name || 'Uncategorized', icon: Tag, color: 'text-purple-500' },
-                            { label: 'Brand Name', value: product.brand || 'General', icon: CheckCircle2, color: 'text-green-500' }
+                            { label: 'Weight', value: product.brand || 'N/A', icon: CheckCircle2, color: 'text-green-500' }
                         ].map((spec, i) => (
                             <div key={i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50 hover:bg-slate-50 transition-colors">
                                 <div className="flex items-center space-x-3">
