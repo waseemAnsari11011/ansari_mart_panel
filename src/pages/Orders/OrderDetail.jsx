@@ -53,6 +53,10 @@ export const OrderDetail = () => {
         window.print();
     };
 
+    const totalPrice = Number(order?.totalPrice) || 0;
+    const deliveryFee = Number(order?.deliveryFee) || 0;
+    const itemSubtotal = Math.max(totalPrice - deliveryFee, 0);
+
     const handleWhatsAppShare = () => {
         if (!order) return;
         const orderId = order._id.substring(order._id.length - 8).toUpperCase();
@@ -116,12 +120,13 @@ export const OrderDetail = () => {
             return item;
         });
 
-        const newTotal = optimisticOrderItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const newItemsSubtotal = optimisticOrderItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
+        const currentDeliveryFee = Number(order.deliveryFee) || 0;
         
         const optimisticOrder = {
             ...order,
             orderItems: optimisticOrderItems,
-            totalPrice: newTotal
+            totalPrice: newItemsSubtotal + currentDeliveryFee
         };
 
         setOrder(optimisticOrder);
@@ -314,15 +319,21 @@ export const OrderDetail = () => {
 
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
-                                    <span>Subtotal</span>
-                                    <span>₹{Math.round(order.totalPrice)}</span>
+                                    <span>Item Subtotal</span>
+                                    <span>₹{Math.round(itemSubtotal)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
+                                    <span>Delivery Fee</span>
+                                    <span className={deliveryFee > 0 ? "text-slate-300" : "text-green-400"}>
+                                        {deliveryFee > 0 ? `₹${Math.round(deliveryFee)}` : 'FREE'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
                                     <div className="flex flex-col">
                                         <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Amount</span>
                                         <span className="text-xs font-bold text-slate-500">Includes all taxes</span>
                                     </div>
-                                    <span className="text-3xl font-black text-orange-500">₹{Math.round(order.totalPrice)}</span>
+                                    <span className="text-3xl font-black text-orange-500">₹{Math.round(totalPrice)}</span>
                                 </div>
                             </div>
 
