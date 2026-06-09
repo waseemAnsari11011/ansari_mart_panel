@@ -14,6 +14,7 @@ import { Settings } from './pages/Settings/Settings'
 import { HelpSupport } from './pages/HelpSupport/HelpSupport'
 import Login from './pages/Auth/Login'
 import { DeliveryZones } from './pages/DeliveryZones/DeliveryZones'
+import Notification from './pages/Notification/Notification'
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -40,6 +41,7 @@ function App() {
         <Route path="customers/:id" element={<UserDetail />} />
         <Route path="business" element={<UsersManagement type="Business" />} />
         <Route path="business/:id" element={<UserDetail />} />
+        <Route path="notifications" element={<Notification />} />
         <Route path="categories" element={<Categories />} />
         <Route path="categories/add" element={<AddCategory />} />
         <Route path="categories/edit/:id" element={<AddCategory />} />

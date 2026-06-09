@@ -11,7 +11,8 @@ import {
   ChevronRight,
   LogOut,
   Map,
-  LifeBuoy
+  LifeBuoy,
+  Bell
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -26,6 +27,7 @@ const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { name: 'Retail Customers', icon: Users, path: '/customers' },
   { name: 'Business Users', icon: Store, path: '/business' },
+  { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Categories', icon: Layers, path: '/categories' },
   { name: 'Products', icon: Package, path: '/products' },
   { name: 'Orders', icon: ShoppingBag, path: '/orders' },
