@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api, { resolveImageUrl } from '../../utils/api';
 import { useGlobalState } from '../../context/GlobalContext';
 import { RotateCcw } from 'lucide-react'; // Import RotateCcw for refresh
@@ -24,8 +24,15 @@ function cn(...inputs) {
 
 export const Products = () => {
     const navigate = useNavigate();
-    const { products, updateProducts, lastFetched } = useGlobalState();
+    const location = useLocation();
+    const { products, updateProducts, lastFetched, categories, updateCategories } = useGlobalState();
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState(() => {
+        if (location.state && location.state.category) {
+            return location.state.category;
+        }
+        return 'All Products';
+    });
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -38,19 +45,43 @@ export const Products = () => {
     }, [products]);
 
     const lastLoadedSearchTerm = useRef('');
+    const lastLoadedCategory = useRef('All Products');
 
-    // Reset to page 1 when search term changes
+    // Fetch categories if not loaded
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const { data } = await api.get('/categories');
+                updateCategories(data);
+            } catch (err) {
+                console.error('Failed to load categories in Products page', err);
+            }
+        };
+        if (categories.length === 0) {
+            loadCategories();
+        }
+    }, [categories.length, updateCategories]);
+
+    // Read and clear category from location state (to prevent sticky filtering on navigation/reload)
+    useEffect(() => {
+        if (location.state && location.state.category) {
+            setSelectedCategory(location.state.category);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
+
+    // Reset to page 1 when search term or category changes
     useEffect(() => {
         setPage(1);
-    }, [searchTerm]);
+    }, [searchTerm, selectedCategory]);
 
     useEffect(() => {
         let active = true;
 
         const loadProducts = async () => {
-            // Guard: If page > 1 but search term has changed, a page reset to 1 is already scheduled.
+            // Guard: If page > 1 but search term or category has changed, a page reset to 1 is already scheduled.
             // Skip this fetch to prevent mismatched page results.
-            if (page > 1 && searchTerm !== lastLoadedSearchTerm.current) {
+            if (page > 1 && (searchTerm !== lastLoadedSearchTerm.current || selectedCategory !== lastLoadedCategory.current)) {
                 return;
             }
 
@@ -65,8 +96,11 @@ export const Products = () => {
                 if (searchTerm) {
                     url += `&search=${encodeURIComponent(searchTerm)}`;
                 }
+                if (selectedCategory && selectedCategory !== 'All Products') {
+                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                }
                 const { data } = await api.get(url);
-                
+
                 if (!active) return;
 
                 if (page === 1) {
@@ -76,6 +110,7 @@ export const Products = () => {
                 }
                 setTotalPages(data.pages);
                 lastLoadedSearchTerm.current = searchTerm;
+                lastLoadedCategory.current = selectedCategory;
             } catch (err) {
                 if (active) {
                     setError(page === 1 ? 'Failed to load products' : 'Failed to load more products');
@@ -96,7 +131,7 @@ export const Products = () => {
             active = false;
             clearTimeout(debounceTimer);
         };
-    }, [page, searchTerm, updateProducts]);
+    }, [page, searchTerm, selectedCategory, updateProducts]);
 
     const handleRefresh = async () => {
         setPage(1);
@@ -107,10 +142,14 @@ export const Products = () => {
             if (searchTerm) {
                 url += `&search=${encodeURIComponent(searchTerm)}`;
             }
+            if (selectedCategory && selectedCategory !== 'All Products') {
+                url += `&category=${encodeURIComponent(selectedCategory)}`;
+            }
             const { data } = await api.get(url);
             updateProducts(data.products);
             setTotalPages(data.pages);
             lastLoadedSearchTerm.current = searchTerm;
+            lastLoadedCategory.current = selectedCategory;
         } catch (err) {
             setError('Failed to refresh products');
         } finally {
@@ -153,7 +192,7 @@ export const Products = () => {
                     <p className="text-slate-500 font-medium text-sm">Manage your inventory and dynamic pricing tiers.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={handleRefresh}
                         className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
                         title="Refresh Inventory"
@@ -182,6 +221,38 @@ export const Products = () => {
                         className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
                     />
                 </div>
+
+                {/* Category Filter */}
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="relative w-full md:w-64">
+                        <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all appearance-none cursor-pointer font-semibold text-slate-700"
+                        >
+                            <option value="All Products">All Categories</option>
+
+                            {categories.map((category) => (
+                                <option key={category._id} value={category.name}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {selectedCategory !== 'All Products' && (
+                        <button
+                            onClick={() => setSelectedCategory('All Products')}
+                            className="px-3 py-2.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-sm font-semibold"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
             </div>
 
             {loading && products.length === 0 ? (
@@ -205,13 +276,25 @@ export const Products = () => {
                 </div>
             ) : filteredProducts.length === 0 ? (
                 <div className="bg-slate-50 p-12 rounded-2xl border-2 border-dashed border-slate-200 text-center">
-                    <p className="text-slate-500 font-bold mb-4">No products match your search.</p>
-                    <button 
-                        onClick={() => setSearchTerm('')}
-                        className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
-                    >
-                        Clear search
-                    </button>
+                    <p className="text-slate-500 font-bold mb-4">No products match your search/filter.</p>
+                    <div className="flex justify-center gap-4">
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
+                            >
+                                Clear search
+                            </button>
+                        )}
+                        {selectedCategory !== 'All Products' && (
+                            <button
+                                onClick={() => setSelectedCategory('All Products')}
+                                className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
+                            >
+                                Clear category filter
+                            </button>
+                        )}
+                    </div>
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -229,8 +312,8 @@ export const Products = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredProducts.map((product) => (
-                                    <tr 
-                                        key={product._id} 
+                                    <tr
+                                        key={product._id}
                                         onClick={() => navigate(`/products/${product._id}`)}
                                         className={cn(
                                             "hover:bg-slate-50/50 transition-colors group cursor-pointer",
@@ -274,7 +357,7 @@ export const Products = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end space-x-2">
-                                                <button 
+                                                <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         navigate(`/products/${product._id}`);

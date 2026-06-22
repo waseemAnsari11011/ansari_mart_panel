@@ -12,6 +12,10 @@ export const Receipt = ({ order, isBulk = false }) => {
     }, [order]);
 
     if (!order) return null;
+    const deliveryFee = Number(order.deliveryFee || 0);
+
+    const subtotal =
+        Number(order.totalPrice || 0) - deliveryFee;
 
     return (
         <>
@@ -91,17 +95,19 @@ export const Receipt = ({ order, isBulk = false }) => {
                 <div className="space-y-1 font-bold">
                     <div className="flex justify-between">
                         <span>SUBTOTAL:</span>
-                        <span>₹{Math.round(order.totalPrice || order.summary?.subtotal)}</span>
+                        <span>₹{Math.round(subtotal)}</span>
                     </div>
-                    {order.summary?.deliveryFee > 0 && (
+
+                    {deliveryFee > 0 && (
                         <div className="flex justify-between">
-                            <span>DELIVERY:</span>
-                            <span>₹{Math.round(order.summary.deliveryFee)}</span>
+                            <span>DELIVERY FEE:</span>
+                            <span>₹{Math.round(deliveryFee)}</span>
                         </div>
                     )}
+
                     <div className="flex justify-between text-sm py-1 border-t border-black/10 mt-1">
                         <span>NET TOTAL:</span>
-                        <span>₹{Math.round(order.totalPrice || order.summary?.total)}</span>
+                        <span>₹{Math.round(order.totalPrice || 0)}</span>
                     </div>
                 </div>
 

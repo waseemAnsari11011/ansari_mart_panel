@@ -146,7 +146,11 @@ export const Categories = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCategories.map((category) => (
-                        <div key={category._id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                        <div 
+                            key={category._id} 
+                            onClick={() => navigate('/products', { state: { category: category.name } })}
+                            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-green-200"
+                        >
                             <div className="flex items-start justify-between mb-4">
                                 <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner group-hover:scale-110 transition-transform">
                                     <img 
@@ -157,13 +161,19 @@ export const Categories = () => {
                                 </div>
                                 <div className="flex space-x-1">
                                     <button 
-                                        onClick={() => navigate(`/categories/edit/${category._id}`)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/categories/edit/${category._id}`);
+                                        }}
                                         className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
                                     <button 
-                                        onClick={() => handleDelete(category._id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(category._id);
+                                        }}
                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                     >
                                         <Trash2 className="w-4 h-4" />

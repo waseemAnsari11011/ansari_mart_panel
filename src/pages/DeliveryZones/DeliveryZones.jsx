@@ -32,6 +32,7 @@ export const DeliveryZones = () => {
     const { isLoaded, loadError } = useJsApiLoader({
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
         libraries,
+        version: '3.64',
     });
 
     const [zones, setZones] = useState([]);

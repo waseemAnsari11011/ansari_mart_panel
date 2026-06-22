@@ -30,10 +30,16 @@ export const Settings = () => {
     const [loading, setLoading] = useState(!settings);
     const [uploading, setUploading] = useState(false);
 
+    const [logisticsTab, setLogisticsTab] = useState('Retail');
     const [deliveryCharges, setDeliveryCharges] = useState({
-        baseCharge: settings?.logistics?.baseDeliveryCharge?.toString() || '40',
-        freeThreshold: settings?.logistics?.freeDeliveryThreshold?.toString() || '500',
-        expressCharge: settings?.logistics?.expressDeliverySurcharge?.toString() || '80'
+        Retail: {
+            mov: settings?.logistics?.Retail?.mov?.toString() || '',
+            deliveryCharge: settings?.logistics?.Retail?.deliveryCharge?.toString() || ''
+        },
+        Business: {
+            mov: settings?.logistics?.Business?.mov?.toString() || '',
+            deliveryCharge: settings?.logistics?.Business?.deliveryCharge?.toString() || ''
+        }
     });
 
     useEffect(() => {
@@ -46,9 +52,14 @@ export const Settings = () => {
                     setBanners(data.banners || []);
                     if (data.logistics) {
                         setDeliveryCharges({
-                            baseCharge: data.logistics.baseDeliveryCharge?.toString() || '40',
-                            freeThreshold: data.logistics.freeDeliveryThreshold?.toString() || '500',
-                            expressCharge: data.logistics.expressDeliverySurcharge?.toString() || '80'
+                            Retail: {
+                                mov: data.logistics.Retail?.mov?.toString() || '',
+                                deliveryCharge: data.logistics.Retail?.deliveryCharge?.toString() || ''
+                            },
+                            Business: {
+                                mov: data.logistics.Business?.mov?.toString() || '',
+                                deliveryCharge: data.logistics.Business?.deliveryCharge?.toString() || ''
+                            }
                         });
                     }
                     setUnits(data.units || []);
@@ -77,9 +88,14 @@ export const Settings = () => {
                 setBanners(data.banners || []);
                 if (data.logistics) {
                     setDeliveryCharges({
-                        baseCharge: data.logistics.baseDeliveryCharge?.toString() || '40',
-                        freeThreshold: data.logistics.freeDeliveryThreshold?.toString() || '500',
-                        expressCharge: data.logistics.expressDeliverySurcharge?.toString() || '80'
+                        Retail: {
+                            mov: data.logistics.Retail?.mov?.toString() || '',
+                            deliveryCharge: data.logistics.Retail?.deliveryCharge?.toString() || ''
+                        },
+                        Business: {
+                            mov: data.logistics.Business?.mov?.toString() || '',
+                            deliveryCharge: data.logistics.Business?.deliveryCharge?.toString() || ''
+                        }
                     });
                 }
                 setUnits(data.units || []);
@@ -151,9 +167,14 @@ export const Settings = () => {
         try {
             const { data } = await api.put('/settings/logistics', {
                 logistics: {
-                    baseDeliveryCharge: Number(deliveryCharges.baseCharge),
-                    freeDeliveryThreshold: Number(deliveryCharges.freeThreshold),
-                    expressDeliverySurcharge: Number(deliveryCharges.expressCharge)
+                    Retail: {
+                        mov: Number(deliveryCharges.Retail.mov),
+                        deliveryCharge: Number(deliveryCharges.Retail.deliveryCharge)
+                    },
+                    Business: {
+                        mov: Number(deliveryCharges.Business.mov),
+                        deliveryCharge: Number(deliveryCharges.Business.deliveryCharge)
+                    }
                 }
             });
             updateSettings(data.settings);
@@ -273,45 +294,101 @@ export const Settings = () => {
                             </div>
                         </div>
 
+                        {/* Tabs */}
+                        <div className="flex border-b border-slate-100">
+                            <button
+                                onClick={() => setLogisticsTab('Retail')}
+                                className={cn(
+                                    'flex-1 py-3.5 text-xs font-black uppercase tracking-widest transition-all',
+                                    logisticsTab === 'Retail'
+                                        ? 'text-green-600 border-b-2 border-green-600 bg-green-50/40'
+                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                )}
+                            >
+                                🛒 Retail
+                            </button>
+                            <button
+                                onClick={() => setLogisticsTab('Business')}
+                                className={cn(
+                                    'flex-1 py-3.5 text-xs font-black uppercase tracking-widest transition-all',
+                                    logisticsTab === 'Business'
+                                        ? 'text-orange-600 border-b-2 border-orange-600 bg-orange-50/40'
+                                        : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                )}
+                            >
+                                🏢 Business
+                            </button>
+                        </div>
+
                         <div className="p-8 space-y-6">
+                            {/* MOV Field */}
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Base Delivery Charge</label>
+                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                                    MOV – Maximum Order Value
+                                </label>
+                                <p className="text-[10px] text-slate-400 font-bold leading-relaxed italic">
+                                    Orders below this amount will be charged delivery fee.
+                                </p>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₹</span>
                                     <input
                                         type="number"
-                                        value={deliveryCharges.baseCharge}
-                                        onChange={(e) => setDeliveryCharges({ ...deliveryCharges, baseCharge: e.target.value })}
-                                        className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
+                                        value={deliveryCharges[logisticsTab].mov}
+                                        onChange={(e) => setDeliveryCharges(prev => ({
+                                            ...prev,
+                                            [logisticsTab]: { ...prev[logisticsTab], mov: e.target.value }
+                                        }))}
+                                        className={cn(
+                                            'w-full pl-8 pr-4 py-3 bg-slate-50 border rounded-xl font-black text-sm outline-none transition-all',
+                                            logisticsTab === 'Retail'
+                                                ? 'border-slate-200 focus:ring-2 focus:ring-green-500/10 focus:border-green-500'
+                                                : 'border-slate-200 focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500'
+                                        )}
                                     />
                                 </div>
                             </div>
 
+                            {/* Delivery Charge Field */}
                             <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Free Delivery Threshold</label>
+                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                                    Delivery Charge
+                                </label>
+                                <p className="text-[10px] text-slate-400 font-bold leading-relaxed italic">
+                                    Fee charged if order is below MOV.
+                                </p>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₹</span>
                                     <input
                                         type="number"
-                                        value={deliveryCharges.freeThreshold}
-                                        onChange={(e) => setDeliveryCharges({ ...deliveryCharges, freeThreshold: e.target.value })}
-                                        className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
+                                        value={deliveryCharges[logisticsTab].deliveryCharge}
+                                        onChange={(e) => setDeliveryCharges(prev => ({
+                                            ...prev,
+                                            [logisticsTab]: { ...prev[logisticsTab], deliveryCharge: e.target.value }
+                                        }))}
+                                        className={cn(
+                                            'w-full pl-8 pr-4 py-3 bg-slate-50 border rounded-xl font-black text-sm outline-none transition-all',
+                                            logisticsTab === 'Retail'
+                                                ? 'border-slate-200 focus:ring-2 focus:ring-green-500/10 focus:border-green-500'
+                                                : 'border-slate-200 focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500'
+                                        )}
                                     />
                                 </div>
-                                <p className="text-[10px] text-slate-400 font-bold leading-relaxed italic">Delivery will be free for orders above this amount.</p>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Express Delivery Surcharge</label>
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">₹</span>
-                                    <input
-                                        type="number"
-                                        value={deliveryCharges.expressCharge}
-                                        onChange={(e) => setDeliveryCharges({ ...deliveryCharges, expressCharge: e.target.value })}
-                                        className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
-                                    />
-                                </div>
+                            {/* Summary Card */}
+                            <div className={cn(
+                                'rounded-2xl p-4 border text-xs font-bold',
+                                logisticsTab === 'Retail'
+                                    ? 'bg-green-50/60 border-green-100 text-green-800'
+                                    : 'bg-orange-50/60 border-orange-100 text-orange-800'
+                            )}>
+                                <p className="font-black uppercase tracking-widest text-[10px] mb-1 opacity-60">Preview Rule</p>
+                                <p>
+                                    Orders below <span className="font-black">₹{deliveryCharges[logisticsTab].mov || '0'}</span> → Delivery fee: <span className="font-black">₹{deliveryCharges[logisticsTab].deliveryCharge || '0'}</span>
+                                </p>
+                                <p className="mt-0.5 opacity-70">
+                                    Orders ₹{deliveryCharges[logisticsTab].mov || '0'} or above → <span className="font-black">FREE delivery</span>
+                                </p>
                             </div>
 
                             <button 
