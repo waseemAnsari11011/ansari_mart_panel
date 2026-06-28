@@ -3,13 +3,12 @@ import {
     Plus,
     Search,
     Filter,
-    MoreVertical,
     Edit2,
     Trash2,
     ChevronDown,
-    ArrowUpDown,
     Loader2,
-    Eye
+    Eye,
+    X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,7 +24,7 @@ function cn(...inputs) {
 export const Products = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { products, updateProducts, lastFetched, categories, updateCategories } = useGlobalState();
+    const { products, updateProducts, categories, updateCategories } = useGlobalState();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(() => {
         if (location.state && location.state.category) {
@@ -38,6 +37,7 @@ export const Products = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState('');
+    const [productStatus, setProductStatus] = useState('All');
 
     const productsRef = useRef(products);
     useEffect(() => {
@@ -46,6 +46,7 @@ export const Products = () => {
 
     const lastLoadedSearchTerm = useRef('');
     const lastLoadedCategory = useRef('All Products');
+    const lastLoadedStatus = useRef('All');
 
     // Fetch categories if not loaded
     useEffect(() => {
@@ -73,7 +74,7 @@ export const Products = () => {
     // Reset to page 1 when search term or category changes
     useEffect(() => {
         setPage(1);
-    }, [searchTerm, selectedCategory]);
+    }, [searchTerm, selectedCategory, productStatus]);
 
     useEffect(() => {
         let active = true;
@@ -81,7 +82,14 @@ export const Products = () => {
         const loadProducts = async () => {
             // Guard: If page > 1 but search term or category has changed, a page reset to 1 is already scheduled.
             // Skip this fetch to prevent mismatched page results.
-            if (page > 1 && (searchTerm !== lastLoadedSearchTerm.current || selectedCategory !== lastLoadedCategory.current)) {
+            if (
+                page > 1 &&
+                (
+                    searchTerm !== lastLoadedSearchTerm.current ||
+                    selectedCategory !== lastLoadedCategory.current ||
+                    productStatus !== lastLoadedStatus.current
+                )
+            ) {
                 return;
             }
 
@@ -99,6 +107,9 @@ export const Products = () => {
                 if (selectedCategory && selectedCategory !== 'All Products') {
                     url += `&category=${encodeURIComponent(selectedCategory)}`;
                 }
+                if (productStatus && productStatus !== 'All') {
+                    url += `&status=${encodeURIComponent(productStatus)}`;
+                }
                 const { data } = await api.get(url);
 
                 if (!active) return;
@@ -111,6 +122,7 @@ export const Products = () => {
                 setTotalPages(data.pages);
                 lastLoadedSearchTerm.current = searchTerm;
                 lastLoadedCategory.current = selectedCategory;
+                lastLoadedStatus.current = productStatus;
             } catch (err) {
                 if (active) {
                     setError(page === 1 ? 'Failed to load products' : 'Failed to load more products');
@@ -131,7 +143,7 @@ export const Products = () => {
             active = false;
             clearTimeout(debounceTimer);
         };
-    }, [page, searchTerm, selectedCategory, updateProducts]);
+    }, [page, searchTerm, selectedCategory, productStatus, updateProducts]);
 
     const handleRefresh = async () => {
         setPage(1);
@@ -145,11 +157,15 @@ export const Products = () => {
             if (selectedCategory && selectedCategory !== 'All Products') {
                 url += `&category=${encodeURIComponent(selectedCategory)}`;
             }
+            if (productStatus && productStatus !== 'All') {
+                url += `&status=${encodeURIComponent(productStatus)}`;
+            }
             const { data } = await api.get(url);
             updateProducts(data.products);
             setTotalPages(data.pages);
             lastLoadedSearchTerm.current = searchTerm;
             lastLoadedCategory.current = selectedCategory;
+            lastLoadedStatus.current = productStatus;
         } catch (err) {
             setError('Failed to refresh products');
         } finally {
@@ -182,7 +198,6 @@ export const Products = () => {
         if (node) observer.current.observe(node);
     }, [loading, loadingMore, page, totalPages]);
 
-    const filteredProducts = products;
 
     return (
         <div className="space-y-6">
@@ -213,13 +228,53 @@ export const Products = () => {
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
                     <input
                         type="text"
                         placeholder="Search by name, weight or SKU..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all"
                     />
+
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-700 transition-colors"
+                            title="Clear Search"
+                        >
+                            <X className="w-5 h-5 stroke-[3]" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Status Filter UI */}
+                <div className="relative w-full md:w-44">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+                    <select
+                        value={productStatus}
+                        onChange={(e) => setProductStatus(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none transition-all appearance-none cursor-pointer font-semibold text-slate-700"
+                    >
+                        <option value="All">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+
+                    {productStatus !== 'All' ? (
+                        <button
+                            type="button"
+                            onClick={() => setProductStatus('All')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-700 transition-colors"
+                            title="Clear Status Filter"
+                        >
+                            <X className="w-5 h-5 stroke-[3]" />
+                        </button>
+                    ) : (
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    )}
                 </div>
 
                 {/* Category Filter */}
@@ -241,17 +296,19 @@ export const Products = () => {
                             ))}
                         </select>
 
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        {selectedCategory !== 'All Products' ? (
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCategory('All Products')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-700 transition-colors"
+                                title="Clear Category Filter"
+                            >
+                                <X className="w-5 h-5 stroke-[3]" />
+                            </button>
+                        ) : (
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        )}
                     </div>
-
-                    {selectedCategory !== 'All Products' && (
-                        <button
-                            onClick={() => setSelectedCategory('All Products')}
-                            className="px-3 py-2.5 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-sm font-semibold"
-                        >
-                            Reset
-                        </button>
-                    )}
                 </div>
             </div>
 
@@ -274,28 +331,6 @@ export const Products = () => {
                         Add your first product
                     </button>
                 </div>
-            ) : filteredProducts.length === 0 ? (
-                <div className="bg-slate-50 p-12 rounded-2xl border-2 border-dashed border-slate-200 text-center">
-                    <p className="text-slate-500 font-bold mb-4">No products match your search/filter.</p>
-                    <div className="flex justify-center gap-4">
-                        {searchTerm && (
-                            <button
-                                onClick={() => setSearchTerm('')}
-                                className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
-                            >
-                                Clear search
-                            </button>
-                        )}
-                        {selectedCategory !== 'All Products' && (
-                            <button
-                                onClick={() => setSelectedCategory('All Products')}
-                                className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
-                            >
-                                Clear category filter
-                            </button>
-                        )}
-                    </div>
-                </div>
             ) : (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
@@ -311,7 +346,7 @@ export const Products = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredProducts.map((product) => (
+                                {products.map((product) => (
                                     <tr
                                         key={product._id}
                                         onClick={() => navigate(`/products/${product._id}`)}

@@ -15,6 +15,7 @@ import { HelpSupport } from './pages/HelpSupport/HelpSupport'
 import Login from './pages/Auth/Login'
 import { DeliveryZones } from './pages/DeliveryZones/DeliveryZones'
 import Notification from './pages/Notification/Notification'
+import NotificationHistory from './pages/Notification/NotificationHistory';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -42,6 +43,7 @@ function App() {
         <Route path="business" element={<UsersManagement type="Business" />} />
         <Route path="business/:id" element={<UserDetail />} />
         <Route path="notifications" element={<Notification />} />
+        <Route path="notification-history" element={<NotificationHistory />} />
         <Route path="categories" element={<Categories />} />
         <Route path="categories/add" element={<AddCategory />} />
         <Route path="categories/edit/:id" element={<AddCategory />} />

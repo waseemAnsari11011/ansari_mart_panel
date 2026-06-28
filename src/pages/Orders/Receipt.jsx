@@ -5,11 +5,10 @@ export const Receipt = ({ order, isBulk = false }) => {
     const [receiptHeight, setReceiptHeight] = useState('auto');
 
     useEffect(() => {
-        if (receiptRef.current) {
-            // Add a 20px buffer to prevent any edge clipping 
+        if (!isBulk && receiptRef.current) {
             setReceiptHeight(receiptRef.current.offsetHeight + 20);
         }
-    }, [order]);
+    }, [order, isBulk]);
 
     if (!order) return null;
     const deliveryFee = Number(order.deliveryFee || 0);
@@ -23,51 +22,57 @@ export const Receipt = ({ order, isBulk = false }) => {
             {!isBulk && (
                 <style dangerouslySetInnerHTML={{
                     __html: `
-                    @media print {
-                        @page {
-                            margin: 0;
-                            size: 80mm ${receiptHeight === 'auto' ? 'auto' : `${receiptHeight}px`};
-                        }
-                        body {
-                            background-color: white !important;
-                            overscroll-behavior: none;
-                        }
-                        .receipt-container {
-                            display: block !important;
-                            position: static !important;
-                        }
+                  @media print {
+                    @page {
+                        margin: 0;
+                        size: 80mm ${receiptHeight === 'auto' ? 'auto' : `${receiptHeight}px`};
                     }
-                    @media screen {
-                        .receipt-container {
-                            position: absolute;
-                            left: -9999px;
-                            top: -9999px;
-                            visibility: hidden;
-                        }
+
+                    body {
+                        background-color: white !important;
+                        overscroll-behavior: none;
                     }
+
+                    .single-receipt {
+                        display: block !important;
+                        position: static !important;
+                    }
+                }
+                   @media screen {
+                    .receipt-container.single-receipt {
+                        position: absolute;
+                        left: -9999px;
+                        top: -9999px;
+                        visibility: hidden;
+                    }
+                }
                 `}} />
             )}
 
             {/* Thermal Receipt (Visible only on print or offscreen for calculation) */}
             <div
                 ref={receiptRef}
-                className="receipt-container w-[80mm] mx-auto bg-white p-6 font-mono text-[10px] text-black leading-relaxed"
+                className={`receipt-container ${!isBulk ? 'single-receipt' : ''} w-[80mm] mx-auto bg-white p-6 font-mono text-[12px] text-black leading-relaxed`}
+                style={{
+                    pageBreakInside: isBulk ? 'auto' : 'avoid',
+                    breakInside: isBulk ? 'auto' : 'avoid'
+                }}
             >
                 <div className="text-center mb-4">
                     <h1 className="text-xl font-bold tracking-tighter uppercase mb-1">Ansari Mart</h1>
-                    <p className="font-bold">Premium Quality Grocery</p>
-                    <p>Sector-63, Noida, UP</p>
-                    <p>Ph: +91 8707626377</p>
+                    <p className="text-[14px] font-bold">Premium Quality Grocery</p>
+                    <p className="text-[13px] ">Sector-63, Noida, UP</p>
+                    <p className="text-[13px] ">Ph: +91 8707626377</p>
                     <div className="border-b border-dashed border-black/40 my-3"></div>
-                    <div className="flex justify-between text-[9px] font-bold">
+                    <div className="flex justify-between text-[12px] font-bold">
                         <span>CUST: {order.shippingAddress?.name || order.admin?.name || 'CASH CUSTOMER'}</span>
                     </div>
                     {(order.shippingAddress?.phone || order.phone) && (
-                        <div className="flex justify-between text-[9px] font-bold">
+                        <div className="flex justify-between text-[12px] font-bold">
                             <span>PH: {order.shippingAddress?.phone || order.phone}</span>
                         </div>
                     )}
-                    <div className="flex justify-between text-[9px] font-bold">
+                    <div className="flex justify-between text-[12px] font-bold">
                         <span>INV: {order._id?.substring(order._id.length - 8).toUpperCase() || order.id?.replace('#', '')}</span>
                         <span>{new Date(order.createdAt || order.date).toLocaleDateString()}</span>
                     </div>
@@ -83,9 +88,9 @@ export const Receipt = ({ order, isBulk = false }) => {
                     </div>
                     {(order.orderItems || order.items || []).filter(item => (item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1)) > 0).map((item, idx) => (
                         <div key={idx} className="grid grid-cols-[1fr_20px_60px] gap-1 items-start">
-                            <span className="break-words uppercase">{item.name || item.product?.name}</span>
-                            <span className="text-center">{item.qty || item.quantity}</span>
-                            <span className="text-right">₹{Math.round((item.price || item.product?.price) * (item.qty || item.quantity))}</span>
+                            <span className="break-words uppercase font-bold">{item.name || item.product?.name}</span>
+                            <span className="text-center font-bold">{item.qty || item.quantity}</span>
+                            <span className="text-right font-bold">₹{Math.round((item.price || item.product?.price) * (item.qty || item.quantity))}</span>
                         </div>
                     ))}
                 </div>
@@ -106,8 +111,8 @@ export const Receipt = ({ order, isBulk = false }) => {
                     )}
 
                     <div className="flex justify-between text-sm py-1 border-t border-black/10 mt-1">
-                        <span>NET TOTAL:</span>
-                        <span>₹{Math.round(order.totalPrice || 0)}</span>
+                        <span className="text-[16px] font-bold" >NET TOTAL:</span>
+                        <span className="text-[16px] font-bold">₹{Math.round(order.totalPrice || 0)}</span>
                     </div>
                 </div>
 

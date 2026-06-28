@@ -34,76 +34,111 @@ const statusTabs = ['B2C', 'B2B', 'Pending', 'Confirmed', 'Shipped', 'Delivered'
 
 const BulkPrintSection = ({ orders }) => {
     const containerRef = useRef(null);
-    const [pageHeight, setPageHeight] = useState('auto');
-
-    useEffect(() => {
-        if (containerRef.current) {
-            const timer = setTimeout(() => {
-                const receipts = containerRef.current.querySelectorAll('.receipt-container');
-                let max = 0;
-                receipts.forEach(r => {
-                    if (r.offsetHeight > max) max = r.offsetHeight;
-                });
-                if (max > 0) {
-                    setPageHeight(Math.ceil(max) + 20);
-                }
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-    }, [orders]);
 
     return (
-        <div ref={containerRef} className="print-receipt-wrapper print:block" style={{ 
-            position: 'absolute', 
-            left: '-9999px', 
-            top: '0', 
-            width: '80mm',
-            background: 'white',
-            visibility: 'hidden',
-            zIndex: -9999
-        }}>
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                @media print {
-                    @page {
-                        margin: 0;
-                        size: 80mm ${pageHeight === 'auto' ? 'auto' : `${pageHeight}px`};
-                    }
-                    html, body {
-                        width: 80mm !important;
-                        margin: 0 !important;
-                        padding: 0 !important;
-                        background: #ffffff !important;
-                    }
-                    .print-receipt-wrapper {
-                        position: static !important;
-                        left: 0 !important;
-                        display: block !important;
-                        visibility: visible !important;
-                        width: 80mm !important;
-                        margin: 0 !important;
-                    }
-                    .receipt-container {
-                        width: 80mm !important;
-                        margin: 0 !important;
-                        padding: 24px !important;
-                        display: block !important;
-                        background: #ffffff !important;
-                        position: static !important;
-                        visibility: visible !important;
-                        page-break-after: always !important;
-                        break-after: page !important;
-                        border-bottom: none !important;
-                    }
-                    .receipt-container:last-child {
-                        page-break-after: auto !important;
-                        break-after: auto !important;
-                    }
-                }
-            `}} />
-            <div className="print-receipt-content bg-white" style={{ width: '80mm' }}>
-                {orders.map((order) => (
-                    <Receipt key={order._id || order.id} order={order} isBulk={true} />
+        <div
+            ref={containerRef}
+            className="print-receipt-wrapper print:block"
+            style={{
+                position: 'absolute',
+                left: '-9999px',
+                top: '0',
+                width: '80mm',
+                background: 'white',
+                visibility: 'hidden',
+                zIndex: -9999
+            }}
+        >
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: `
+@media print {
+
+   
+
+    html,
+    body {
+        width: 80mm !important;
+        min-width: 80mm !important;
+        max-width: 80mm !important;
+
+        margin: 0 !important;
+        padding: 0 !important;
+
+        background: #fff !important;
+        overflow: visible !important;
+
+        height: auto !important;
+    }
+
+    .print-receipt-wrapper {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+
+        display: block !important;
+        visibility: visible !important;
+
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+
+        overflow: visible !important;
+    }
+
+    .print-receipt-content {
+        display: block !important;
+        width: 80mm !important;
+        margin: 0 !important;
+
+        overflow: visible !important;
+    }
+
+    .receipt-container {
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 8px !important;
+
+        display: block !important;
+
+        page-break-before: auto !important;
+        page-break-after: auto !important;
+        page-break-inside: avoid !important;
+
+        break-before: auto !important;
+        break-after: auto !important;
+        break-inside: avoid !important;
+    }
+
+    .receipt-separator {
+        border-top: 2px dashed #000 !important;
+        margin: 8px 0 !important;
+
+        page-break-before: avoid !important;
+        page-break-after: avoid !important;
+    }
+}
+`,
+                }}
+            />
+
+            <div
+                className="print-receipt-content bg-white"
+                style={{
+                    width: '80mm',
+                }}
+            >
+                {orders.map((order, index) => (
+                    <div key={order._id || order.id}>
+                        <Receipt
+                            order={order}
+                            isBulk={true}
+                        />
+
+                        {index !== orders.length - 1 && (
+                            <div className="receipt-separator" />
+                        )}
+                    </div>
                 ))}
             </div>
         </div>
@@ -308,13 +343,52 @@ export const Orders = () => {
 
     const handleBulkPrint = () => {
         if (selectedOrderIds.length === 0) return;
-        const selectedOrdersData = orders.filter(o => selectedOrderIds.includes(o._id));
+
+        const selectedOrdersData = orders.filter(o =>
+            selectedOrderIds.includes(o._id)
+        );
+
         setBulkPrintOrders(selectedOrdersData);
+
         setTimeout(() => {
+            const content = document.querySelector('.print-receipt-content');
+
+            if (content) {
+                const height = content.scrollHeight;
+
+                let style = document.getElementById('bulk-print-style');
+
+                if (!style) {
+                    style = document.createElement('style');
+                    style.id = 'bulk-print-style';
+                    document.head.appendChild(style);
+                }
+
+                style.innerHTML = `
+                @media print {
+                    @page {
+                        size: 80mm ${height}px;
+                        margin: 0;
+                    }
+                }
+                `;
+            }
+
             window.print();
-            setBulkPrintOrders([]);
         }, 500);
     };
+
+    useEffect(() => {
+        const afterPrint = () => {
+            setBulkPrintOrders([]);
+        };
+
+        window.addEventListener('afterprint', afterPrint);
+
+        return () => {
+            window.removeEventListener('afterprint', afterPrint);
+        };
+    }, []);
 
     const handleBulkStatusChange = async (newStatus, selectElement) => {
         if (selectedOrderIds.length === 0 || !newStatus) return;
@@ -349,7 +423,7 @@ export const Orders = () => {
             } else {
                 alert(`Updated ${successCount} orders, but ${failCount} failed. Please check the console.`);
             }
-            
+
             setIsMultiSelectMode(false);
             setSelectedOrderIds([]);
         } catch (err) {

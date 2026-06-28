@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import api from '../../utils/api'
 import {
     Bell,
@@ -15,6 +16,8 @@ const Notification = () => {
         product: '',
         image: null
     });
+
+    const navigate = useNavigate();
 
     const [products, setProducts] = useState([]);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -60,25 +63,27 @@ const Notification = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log("Sending Data:", {
-            title: formData.title,
-            body: formData.message,
-            productId: formData.product
-        });
+        const data = new FormData();
+        data.append("title", formData.title);
+        data.append("body", formData.message);
+        data.append("productId", formData.product);
+
+        if (formData.image) {
+            data.append("image", formData.image);
+        }
 
         try {
             const response = await api.post(
                 '/notifications/send-all',
+                data,
                 {
-                    title: formData.title,
-                    body: formData.message,
-                    productId: formData.product
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
                 }
             );
 
-            alert(
-                `Notification Sent Successfully\nSent: ${response.data.sent}`
-            );
+            alert(`Notification Sent Successfully\nSent: ${response.data.sent}`);
 
             setFormData({
                 title: '',
@@ -112,7 +117,10 @@ const Notification = () => {
                     </div>
 
                     <div className="flex gap-3">
-                        <button className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 flex items-center gap-2 hover:bg-slate-50">
+                        <button
+                            onClick={() => navigate("/notification-history")}
+                            className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 flex items-center gap-2 hover:bg-slate-50"
+                        >
                             <History size={16} />
                             History
                         </button>
