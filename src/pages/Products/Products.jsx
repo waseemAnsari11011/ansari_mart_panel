@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import api, { resolveImageUrl } from '../../utils/api';
 import { useGlobalState } from '../../context/GlobalContext';
 import { RotateCcw } from 'lucide-react'; // Import RotateCcw for refresh
@@ -24,20 +24,27 @@ function cn(...inputs) {
 export const Products = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { products, updateProducts, categories, updateCategories } = useGlobalState();
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState(() => {
-        if (location.state && location.state.category) {
-            return location.state.category;
-        }
-        return 'All Products';
-    });
+
+    const [searchTerm, setSearchTerm] = useState(
+        () => searchParams.get('search') || ''
+    );
+
+    const [selectedCategory, setSelectedCategory] = useState(
+        () => searchParams.get('category') || 'All Products'
+    );
+
+    const [productStatus, setProductStatus] = useState(
+        () => searchParams.get('status') || 'All'
+    );
+
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState('');
-    const [productStatus, setProductStatus] = useState('All');
+
 
     const productsRef = useRef(products);
     useEffect(() => {
@@ -63,23 +70,40 @@ export const Products = () => {
         }
     }, [categories.length, updateCategories]);
 
-    // Read and clear category from location state (to prevent sticky filtering on navigation/reload)
-    useEffect(() => {
-        if (location.state && location.state.category) {
-            setSelectedCategory(location.state.category);
-            navigate(location.pathname, { replace: true, state: {} });
-        }
-    }, [location.state, navigate, location.pathname]);
-
     // Reset to page 1 when search term or category changes
     useEffect(() => {
         setPage(1);
     }, [searchTerm, selectedCategory, productStatus]);
 
     useEffect(() => {
+        const params = {};
+
+        if (searchTerm) {
+            params.search = searchTerm;
+        }
+
+        if (selectedCategory !== 'All Products') {
+            params.category = selectedCategory;
+        }
+
+        if (productStatus !== 'All') {
+            params.status = productStatus;
+        }
+
+        setSearchParams(params, { replace: true });
+    }, [searchTerm, selectedCategory, productStatus, setSearchParams]);
+
+    useEffect(() => {
         let active = true;
 
         const loadProducts = async () => {
+
+            console.log("Current Filters:", {
+                page,
+                searchTerm,
+                selectedCategory,
+                productStatus,
+            });
             // Guard: If page > 1 but search term or category has changed, a page reset to 1 is already scheduled.
             // Skip this fetch to prevent mismatched page results.
             if (
@@ -110,6 +134,7 @@ export const Products = () => {
                 if (productStatus && productStatus !== 'All') {
                     url += `&status=${encodeURIComponent(productStatus)}`;
                 }
+                console.log("API URL:", url);
                 const { data } = await api.get(url);
 
                 if (!active) return;
@@ -346,88 +371,93 @@ export const Products = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {products.map((product) => (
-                                    <tr
-                                        key={product._id}
-                                        onClick={() => navigate(`/products/${product._id}`)}
-                                        className={cn(
-                                            "hover:bg-slate-50/50 transition-colors group cursor-pointer",
-                                            (Number(product.mrp) === 0 || !product.mrp) && "bg-red-100/80 hover:bg-red-200/80"
-                                        )}
-                                    >
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden shadow-inner border border-slate-200">
-                                                    <img src={resolveImageUrl(product.images?.[0]) || 'https://placehold.co/100x100?text=Product'} alt={product.name} className="w-full h-full object-cover" />
+                                {products.map((product, index) => {
+                                    const isLast = index === products.length - 1;
+
+                                    return (
+                                        <tr
+                                            ref={isLast ? lastProductElementRef : null}
+                                            key={product._id}
+                                            onClick={() => navigate(`/products/${product._id}`)}
+                                            className={cn(
+                                                "hover:bg-slate-50/50 transition-colors group cursor-pointer",
+                                                (Number(product.mrp) === 0 || !product.mrp) && "bg-red-100/80 hover:bg-red-200/80"
+                                            )}
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="w-12 h-12 bg-slate-100 rounded-xl overflow-hidden shadow-inner border border-slate-200">
+                                                        <img src={resolveImageUrl(product.images?.[0]) || 'https://placehold.co/100x100?text=Product'} alt={product.name} className="w-full h-full object-cover" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-900">{product.name}</p>
+                                                        <p className="text-[11px] font-bold text-slate-400">{product._id}</p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-slate-900">{product.name}</p>
-                                                    <p className="text-[11px] font-bold text-slate-400">{product._id}</p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-bold text-slate-700">{product.category?.name || 'Uncategorized'}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="text-sm font-black text-slate-900">
+                                                    ₹{product.mrp || 0}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={cn(
+                                                    "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
+                                                    product.retailStatus === 'Active' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'
+                                                )}>
+                                                    {product.retailStatus || 'Active'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={cn(
+                                                    "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
+                                                    product.businessStatus === 'Active' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-red-50 text-red-600 border-red-100'
+                                                )}>
+                                                    {product.businessStatus || 'Active'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end space-x-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/products/${product._id}`);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/products/edit/${product._id}${location.search}`);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(product._id);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm font-bold text-slate-700">{product.category?.name || 'Uncategorized'}</span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className="text-sm font-black text-slate-900">
-                                                ₹{product.mrp || 0}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={cn(
-                                                "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
-                                                product.retailStatus === 'Active' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'
-                                            )}>
-                                                {product.retailStatus || 'Active'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <span className={cn(
-                                                "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-sm",
-                                                product.businessStatus === 'Active' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-red-50 text-red-600 border-red-100'
-                                            )}>
-                                                {product.businessStatus || 'Active'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end space-x-2">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/products/${product._id}`);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/products/edit/${product._id}`);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(product._id);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
                     {/* Infinite Scroll Trigger Spacer */}
-                    <div ref={lastProductElementRef} className="py-8 flex flex-col justify-center items-center gap-2">
+                    <div className="py-8 flex flex-col justify-center items-center gap-2">
                         {loadingMore && (
                             <div className="flex items-center space-x-2 text-green-600 font-bold text-sm bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm animate-pulse">
                                 <Loader2 className="w-5 h-5 animate-spin" />

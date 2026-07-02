@@ -70,7 +70,7 @@ export const Categories = () => {
         }
     };
 
-    const filteredCategories = categories.filter(category => 
+    const filteredCategories = categories.filter(category =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -84,7 +84,7 @@ export const Categories = () => {
                     <p className="text-slate-500 font-medium text-sm">Organize your products into easy-to-navigate categories.</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={handleRefresh}
                         className="p-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
                         title="Refresh Categories"
@@ -126,7 +126,7 @@ export const Categories = () => {
             ) : categories.length === 0 ? (
                 <div className="bg-slate-50 p-12 rounded-2xl border-2 border-dashed border-slate-200 text-center">
                     <p className="text-slate-500 font-bold mb-4">No categories found.</p>
-                    <button 
+                    <button
                         onClick={() => navigate('/categories/add')}
                         className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
                     >
@@ -136,7 +136,7 @@ export const Categories = () => {
             ) : filteredCategories.length === 0 ? (
                 <div className="bg-slate-50 p-12 rounded-2xl border-2 border-dashed border-slate-200 text-center">
                     <p className="text-slate-500 font-bold mb-4">No categories match your search.</p>
-                    <button 
+                    <button
                         onClick={() => setSearchQuery('')}
                         className="text-green-600 font-black uppercase text-xs tracking-widest hover:underline"
                     >
@@ -146,21 +146,23 @@ export const Categories = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredCategories.map((category) => (
-                        <div 
-                            key={category._id} 
-                            onClick={() => navigate('/products', { state: { category: category.name } })}
+                        <div
+                            key={category._id}
+                            onClick={() =>
+                                navigate(`/products?category=${encodeURIComponent(category.name)}`)
+                            }
                             className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group cursor-pointer hover:border-green-200"
                         >
                             <div className="flex items-start justify-between mb-4">
                                 <div className="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 shadow-inner group-hover:scale-110 transition-transform">
-                                    <img 
-                                        src={resolveImageUrl(category.image) || 'https://placehold.co/100x100?text=Category'} 
-                                        alt={category.name} 
-                                        className="w-full h-full object-cover" 
+                                    <img
+                                        src={resolveImageUrl(category.image) || 'https://placehold.co/100x100?text=Category'}
+                                        alt={category.name}
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                                 <div className="flex space-x-1">
-                                    <button 
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigate(`/categories/edit/${category._id}`);
@@ -169,7 +171,7 @@ export const Categories = () => {
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleDelete(category._id);

@@ -6,7 +6,8 @@ import {
     Send,
     History,
     Image,
-    Package
+    Package,
+    Loader2
 } from 'lucide-react';
 
 const Notification = () => {
@@ -20,7 +21,12 @@ const Notification = () => {
     const navigate = useNavigate();
 
     const [products, setProducts] = useState([]);
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [loadingProducts, setLoadingProducts] = useState(false);
+
+    const [productSearch, setProductSearch] = useState('');
+    const [productPage, setProductPage] = useState(1);
+    const [productPages, setProductPages] = useState(1);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -34,20 +40,45 @@ const Notification = () => {
     const [showProducts, setShowProducts] = useState(false);
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (!showProducts) return;
 
-    const fetchProducts = async () => {
+        setProductSearch('');
+        fetchProducts(1, '');
+    }, [showProducts]);
+
+    useEffect(() => {
+        if (!showProducts) return;
+
+        const timer = setTimeout(() => {
+            fetchProducts(1, productSearch);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [productSearch, showProducts]);
+
+    const fetchProducts = async (page = 1, search = '') => {
         try {
             setLoadingProducts(true);
 
-            const response = await api.get('/products');
+            let url = `/products?page=${page}&limit=20`;
 
-            console.log('Products Response:', response.data);
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
 
-            setProducts(response.data.products || response.data);
+            const { data } = await api.get(url);
+
+            if (page === 1) {
+                setProducts(data.products);
+            } else {
+                setProducts(prev => [...prev, ...data.products]);
+            }
+
+            setProductPage(page);
+            setProductPages(data.pages);
+
         } catch (error) {
-            console.error('Product fetch error:', error);
+            console.error(error);
         } finally {
             setLoadingProducts(false);
         }
@@ -91,6 +122,13 @@ const Notification = () => {
                 product: '',
                 image: null
             });
+
+            setSelectedProduct(null);
+            setProductSearch('');
+            setProducts([]);
+            setProductPage(1);
+            setProductPages(1);
+            setShowProducts(false);
 
         } catch (error) {
             console.error(error);
@@ -174,32 +212,84 @@ const Notification = () => {
                                 className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white cursor-pointer flex items-center justify-between"
                             >
                                 <span className="text-slate-700">
-                                    {formData.product
-                                        ? products.find(p => p._id === formData.product)?.name
-                                        : "Select Product"}
+                                    {selectedProduct?.name || "Select Product"}
                                 </span>
 
                                 <Package className="w-5 h-5 text-slate-400" />
                             </div>
 
                             {showProducts && (
-                                <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-slate-200 rounded-xl shadow-lg h-64 overflow-y-auto">
-                                    {products.map((product) => (
-                                        <button
-                                            type="button"
-                                            key={product._id}
-                                            onClick={() => {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    product: product._id
-                                                }));
-                                                setShowProducts(false);
+                                <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white border border-slate-200 rounded-xl shadow-lg">
+
+                                    {/* Search Box */}
+                                    <div className="p-3 border-b border-slate-200">
+                                        <input
+                                            type="text"
+                                            placeholder="Search product..."
+                                            value={productSearch}
+                                            onChange={(e) => {
+                                                setProductSearch(e.target.value);
                                             }}
-                                            className="w-full text-left px-4 py-3 hover:bg-green-50"
-                                        >
-                                            {product.name}
-                                        </button>
-                                    ))}
+                                            className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-green-500"
+                                        />
+                                    </div>
+
+                                    {/* Product List */}
+                                    <div
+                                        className="max-h-64 overflow-y-auto"
+                                        onScroll={(e) => {
+                                            const target = e.target;
+
+                                            if (
+                                                target.scrollTop + target.clientHeight >= target.scrollHeight - 20 &&
+                                                !loadingProducts &&
+                                                productPage < productPages
+                                            ) {
+                                                fetchProducts(productPage + 1, productSearch);
+                                            }
+                                        }}
+                                    >
+                                        {loadingProducts && products.length === 0 ? (
+                                            <div className="flex items-center justify-center gap-2 p-3 text-slate-500">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Loading products...
+                                            </div>
+                                        ) : products.length > 0 ? (
+                                            products.map((product) => (
+                                                <button
+                                                    type="button"
+                                                    key={product._id}
+                                                    onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            product: product._id
+                                                        }));
+                                                        setSelectedProduct(product);
+                                                        setProductSearch('');
+                                                        setShowProducts(false);
+                                                    }}
+                                                    className="w-full text-left px-4 py-3 hover:bg-green-50 border-b border-slate-100 last:border-b-0"
+                                                >
+                                                    <div className="font-medium">{product.name}</div>
+
+                                                    <div className="text-xs text-slate-500">
+                                                        {product.category?.name}
+                                                    </div>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="p-4 text-center text-slate-500">
+                                                No products found
+                                            </div>
+                                        )}
+
+                                        {loadingProducts && products.length > 0 && (
+                                            <div className="flex items-center justify-center gap-2 p-3 text-slate-500">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Loading more products...
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>

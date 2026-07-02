@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
     X,
     Info,
@@ -24,6 +24,7 @@ function cn(...inputs) {
 
 export const AddProduct = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const { settings, updateSettings } = useGlobalState();
     const isEdit = !!id;
@@ -174,7 +175,7 @@ export const AddProduct = () => {
             } else {
                 await api.post('/products', productData);
             }
-            navigate('/products');
+            navigate(`/products${location.search}`);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to save product');
         } finally {
@@ -203,7 +204,7 @@ export const AddProduct = () => {
                         </p>
                     </div>
                     <button
-                        onClick={() => navigate('/products')}
+                        onClick={() => navigate(`/products${location.search}`)}
                         className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-red-500"
                     >
                         <X className="w-6 h-6" />
@@ -290,62 +291,62 @@ export const AddProduct = () => {
                                     required
                                 />
                             </div>
-                            </div>
+                        </div>
 
 
-                            <div className="space-y-4 text-slate-700">
-                                <label className="text-sm font-bold">Visibility Status</label>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Retail Users</p>
-                                        <div className="flex items-center space-x-4">
-                                            <label className="flex items-center space-x-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    checked={retailStatus === 'Active'}
-                                                    onChange={() => setRetailStatus('Active')}
-                                                    className="w-4 h-4 text-green-600 focus:ring-green-500"
-                                                />
-                                                <span className="text-sm font-semibold">Active</span>
-                                            </label>
-                                            <label className="flex items-center space-x-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    checked={retailStatus === 'Inactive'}
-                                                    onChange={() => setRetailStatus('Inactive')}
-                                                    className="w-4 h-4 text-red-600 focus:ring-red-500"
-                                                />
-                                                <span className="text-sm font-semibold">Inactive</span>
-                                            </label>
-                                        </div>
+                        <div className="space-y-4 text-slate-700">
+                            <label className="text-sm font-bold">Visibility Status</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div className="space-y-2">
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Retail Users</p>
+                                    <div className="flex items-center space-x-4">
+                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                checked={retailStatus === 'Active'}
+                                                onChange={() => setRetailStatus('Active')}
+                                                className="w-4 h-4 text-green-600 focus:ring-green-500"
+                                            />
+                                            <span className="text-sm font-semibold">Active</span>
+                                        </label>
+                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                checked={retailStatus === 'Inactive'}
+                                                onChange={() => setRetailStatus('Inactive')}
+                                                className="w-4 h-4 text-red-600 focus:ring-red-500"
+                                            />
+                                            <span className="text-sm font-semibold">Inactive</span>
+                                        </label>
                                     </div>
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Users</p>
-                                        <div className="flex items-center space-x-4">
-                                            <label className="flex items-center space-x-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    checked={businessStatus === 'Active'}
-                                                    onChange={() => setBusinessStatus('Active')}
-                                                    className="w-4 h-4 text-orange-600 focus:ring-orange-500"
-                                                />
-                                                <span className="text-sm font-semibold">Active</span>
-                                            </label>
-                                            <label className="flex items-center space-x-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    checked={businessStatus === 'Inactive'}
-                                                    onChange={() => setBusinessStatus('Inactive')}
-                                                    className="w-4 h-4 text-red-600 focus:ring-red-500"
-                                                />
-                                                <span className="text-sm font-semibold">Inactive</span>
-                                            </label>
-                                        </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Business Users</p>
+                                    <div className="flex items-center space-x-4">
+                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                checked={businessStatus === 'Active'}
+                                                onChange={() => setBusinessStatus('Active')}
+                                                className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                                            />
+                                            <span className="text-sm font-semibold">Active</span>
+                                        </label>
+                                        <label className="flex items-center space-x-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                checked={businessStatus === 'Inactive'}
+                                                onChange={() => setBusinessStatus('Inactive')}
+                                                className="w-4 h-4 text-red-600 focus:ring-red-500"
+                                            />
+                                            <span className="text-sm font-semibold">Inactive</span>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
+                        </div>
                     </section>
-                    
+
 
                     {/* Pricing Tiers Side-by-Side */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6">
@@ -577,7 +578,7 @@ export const AddProduct = () => {
                 <div className="px-8 py-6 border-t border-slate-100 bg-slate-50 flex items-center justify-end space-x-4">
                     <button
                         type="button"
-                        onClick={() => navigate('/products')}
+                        onClick={() => navigate(`/products${location.search}`)}
                         className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200/50 rounded-xl transition-all text-sm"
                     >
                         Cancel
