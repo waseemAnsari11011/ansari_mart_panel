@@ -30,6 +30,34 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
+const splitUnitFromName = (name = '') => {
+    const trimmedName = String(name || '').trim();
+    const unitMatch = trimmedName.match(/\s*\(([^()]+)\)\s*$/);
+
+    if (!unitMatch) {
+        return { name: trimmedName, unit: '' };
+    }
+
+    return {
+        name: trimmedName.slice(0, unitMatch.index).trim() || trimmedName,
+        unit: unitMatch[1].trim()
+    };
+};
+
+const getOrderItemQuantity = (item) => item.qty ?? item.quantity ?? 1;
+
+const getOrderItemDisplay = (item) => {
+    const parsedName = splitUnitFromName(item.name || item.product?.name || 'Product');
+    const unit = String(item.unit || parsedName.unit || '').trim();
+    const quantity = getOrderItemQuantity(item);
+
+    return {
+        name: parsedName.name,
+        quantity,
+        quantityLabel: unit ? `${quantity} ${unit}` : String(quantity)
+    };
+};
+
 const statusTabs = ['B2C', 'B2B', 'Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
 
 const BulkPrintSection = ({ orders }) => {
@@ -271,9 +299,9 @@ export const Orders = () => {
         });
         if (itemsList.length > 0) {
             itemsText = itemsList.map(item => {
-                const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                const itemDisplay = getOrderItemDisplay(item);
                 const p = item.price || item.product?.price || 0;
-                return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
             }).join('\n');
         }
 
@@ -318,9 +346,9 @@ export const Orders = () => {
             });
             if (itemsList.length > 0) {
                 itemsText = itemsList.map(item => {
-                    const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                    const itemDisplay = getOrderItemDisplay(item);
                     const p = item.price || item.product?.price || 0;
-                    return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+                    return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
                 }).join('\n');
             }
 

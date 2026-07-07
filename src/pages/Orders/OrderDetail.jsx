@@ -24,6 +24,34 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
+const splitUnitFromName = (name = '') => {
+    const trimmedName = String(name || '').trim();
+    const unitMatch = trimmedName.match(/\s*\(([^()]+)\)\s*$/);
+
+    if (!unitMatch) {
+        return { name: trimmedName, unit: '' };
+    }
+
+    return {
+        name: trimmedName.slice(0, unitMatch.index).trim() || trimmedName,
+        unit: unitMatch[1].trim()
+    };
+};
+
+const getOrderItemQuantity = (item) => item.qty ?? item.quantity ?? 1;
+
+const getOrderItemDisplay = (item) => {
+    const parsedName = splitUnitFromName(item.name || item.product?.name || 'Product');
+    const unit = String(item.unit || parsedName.unit || '').trim();
+    const quantity = getOrderItemQuantity(item);
+
+    return {
+        name: parsedName.name,
+        quantity,
+        quantityLabel: unit ? `${quantity} ${unit}` : String(quantity)
+    };
+};
+
 export const OrderDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -73,9 +101,9 @@ export const OrderDetail = () => {
         });
         if (itemsList.length > 0) {
             itemsText = itemsList.map(item => {
-                const q = item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1);
+                const itemDisplay = getOrderItemDisplay(item);
                 const p = item.price || item.product?.price || 0;
-                return `- ${item.name || item.product?.name} (x${q}) - ₹${Math.round(p)}`;
+                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
             }).join('\n');
         }
 
@@ -259,7 +287,10 @@ export const OrderDetail = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {(order.orderItems || []).map((item, idx) => (
+                                        {(order.orderItems || []).map((item, idx) => {
+                                            const itemDisplay = getOrderItemDisplay(item);
+
+                                            return (
                                             <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
                                                 <td className="px-8 py-5">
                                                     <div className={cn(
@@ -272,7 +303,7 @@ export const OrderDetail = () => {
                                                             <img src={resolveImageUrl(item.image || item.product?.images?.[0]) || 'https://placehold.co/100x100?text=Product'} className="w-full h-full object-cover" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-black text-slate-900 leading-tight group-hover/item:text-green-600 transition-colors">{item.name || item.product?.name || 'Unknown Product'}</p>
+                                                            <p className="text-sm font-black text-slate-900 leading-tight group-hover/item:text-green-600 transition-colors">{itemDisplay.name}</p>
                                                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{item.product?._id || item.product || 'ID N/A'}</p>
                                                         </div>
                                                     </div>
@@ -299,7 +330,8 @@ export const OrderDetail = () => {
                                                 </td>
                                                 <td className="px-8 py-5 text-right text-sm font-black text-slate-900">₹{Math.round(item.price * item.qty)}</td>
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
