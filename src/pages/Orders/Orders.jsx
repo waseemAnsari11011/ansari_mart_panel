@@ -49,12 +49,16 @@ const getOrderItemQuantity = (item) => item.qty ?? item.quantity ?? 1;
 const getOrderItemDisplay = (item) => {
     const parsedName = splitUnitFromName(item.name || item.product?.name || 'Product');
     const unit = String(item.unit || parsedName.unit || '').trim();
+    const tierLabel = String(item.tierLabel || '').trim();
     const quantity = getOrderItemQuantity(item);
+    const selectedOption = tierLabel || unit;
 
     return {
         name: parsedName.name,
         quantity,
-        quantityLabel: unit ? `${quantity} ${unit}` : String(quantity)
+        quantityLabel: selectedOption
+            ? (quantity === 1 ? selectedOption : `${quantity} × ${selectedOption}`)
+            : String(quantity)
     };
 };
 

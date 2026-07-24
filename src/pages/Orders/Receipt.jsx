@@ -24,12 +24,17 @@ const getReceiptItem = (item) => {
     const rawName = item.name || item.product?.name || 'Product';
     const parsedName = splitUnitFromName(rawName);
     const unit = String(item.unit || item.packageUnit || parsedName.unit || '').trim();
+    const tierLabel = String(item.tierLabel || '').trim();
+    const quantity = getItemQuantity(item);
+    const selectedOption = tierLabel || unit;
     const weight = String(item.weight || item.product?.weight || item.product?.brand || item.brand || '').trim();
 
     return {
         name: parsedName.name,
-        quantity: getItemQuantity(item),
-        quantityLabel: unit ? `${getItemQuantity(item)} ${unit}` : String(getItemQuantity(item)),
+        quantity,
+        quantityLabel: selectedOption
+            ? (quantity === 1 ? selectedOption : `${quantity} × ${selectedOption}`)
+            : String(quantity),
         weight: weight || '-',
         price: item.price ?? item.product?.price ?? 0
     };

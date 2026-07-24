@@ -43,12 +43,16 @@ const getOrderItemQuantity = (item) => item.qty ?? item.quantity ?? 1;
 const getOrderItemDisplay = (item) => {
     const parsedName = splitUnitFromName(item.name || item.product?.name || 'Product');
     const unit = String(item.unit || parsedName.unit || '').trim();
+    const tierLabel = String(item.tierLabel || '').trim();
     const quantity = getOrderItemQuantity(item);
+    const selectedOption = tierLabel || unit;
 
     return {
         name: parsedName.name,
         quantity,
-        quantityLabel: unit ? `${quantity} ${unit}` : String(quantity)
+        quantityLabel: selectedOption
+            ? (quantity === 1 ? selectedOption : `${quantity} × ${selectedOption}`)
+            : String(quantity)
     };
 };
 
@@ -309,24 +313,39 @@ export const OrderDetail = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5 text-center text-sm font-black text-slate-700">₹{Math.round(item.price)}</td>
-                                                <td className="px-8 py-5 text-center flex justify-center">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={item.qty}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            if (val === "" || /^\d+$/.test(val)) {
-                                                                updateQuantity(item._id, Number(val));
-                                                            }
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            if (e.target.value === "") {
-                                                                updateQuantity(item._id, 1);
-                                                            }
-                                                        }}
-                                                        className="w-20 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                    />
+                                                <td className="px-8 py-5 text-center">
+                                                    <div className="flex flex-col items-center gap-1.5">
+                                                        {item.tierLabel && (
+                                                            <span className="text-sm font-black text-slate-800">
+                                                                {itemDisplay.quantityLabel}
+                                                            </span>
+                                                        )}
+                                                        <div className="flex items-center gap-2">
+                                                            {item.tierLabel && (
+                                                                <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">
+                                                                    Packs
+                                                                </span>
+                                                            )}
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                value={item.qty}
+                                                                aria-label={item.tierLabel ? `Number of ${item.tierLabel} packs` : 'Quantity'}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    if (val === "" || /^\d+$/.test(val)) {
+                                                                        updateQuantity(item._id, Number(val));
+                                                                    }
+                                                                }}
+                                                                onBlur={(e) => {
+                                                                    if (e.target.value === "") {
+                                                                        updateQuantity(item._id, 1);
+                                                                    }
+                                                                }}
+                                                                className={`${item.tierLabel ? 'w-14' : 'w-20'} px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-8 py-5 text-right text-sm font-black text-slate-900">₹{Math.round(item.price * item.qty)}</td>
                                             </tr>
