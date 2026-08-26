@@ -34,7 +34,7 @@ export default function Login() {
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 sm:p-12">
       {/* Logo */}
       <div className="mb-10">
-        <img src={logoImg} alt="Ansari Mart Logo" className="w-32 h-auto" />
+        <img src={logoImg} alt="amart Logo" className="w-32 h-auto" />
       </div>
 
       <h1 className="text-3xl font-extrabold text-slate-900 mb-12">

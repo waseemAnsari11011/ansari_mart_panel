@@ -51,10 +51,10 @@ export const Sidebar = () => {
         {/* Logo */}
         <div className="py-6">
           <div className="flex items-center space-x-1">
-            <img src={logoImg} alt="Ansari Mart Logo" className="h-18 w-auto" />
+            <img src={logoImg} alt="amart Logo" className="h-18 w-auto" />
             <div>
               <h1 className="text-xl font-black tracking-tight text-white leading-none">
-                ANSARI<span className="text-orange-500">MART</span>
+                <span className="text-orange-500">amart</span>
               </h1>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Admin Panel</p>
             </div>

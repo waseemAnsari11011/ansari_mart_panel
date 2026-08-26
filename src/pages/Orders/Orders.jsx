@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Receipt } from './Receipt';
 import {
     ShoppingBag,
@@ -179,7 +179,10 @@ const BulkPrintSection = ({ orders }) => {
 
 export const Orders = () => {
     const { orders, updateOrders, lastFetched } = useGlobalState();
-    const [typeFilter, setTypeFilter] = useState('Retail');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedType = searchParams.get('type');
+    const initialTypeFilter = requestedType === 'Business' ? 'Business' : 'Retail';
+    const [typeFilter, setTypeFilter] = useState(initialTypeFilter);
     const [statusFilter, setStatusFilter] = useState('All');
     const [loading, setLoading] = useState(orders.length === 0);
     const [error, setError] = useState('');
@@ -191,6 +194,15 @@ export const Orders = () => {
     const [customDate, setCustomDate] = useState('');
     const dateInputRef = useRef(null);
     const navigate = useNavigate();
+
+    const handleTypeFilterChange = (type) => {
+        setTypeFilter(type);
+        setSearchParams(previousParams => {
+            const nextParams = new URLSearchParams(previousParams);
+            nextParams.set('type', type);
+            return nextParams;
+        }, { replace: true });
+    };
 
     useEffect(() => {
         if (dateFilter === 'Custom' && dateInputRef.current) {
@@ -313,7 +325,7 @@ export const Orders = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
 
         // Open WhatsApp
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
@@ -333,7 +345,7 @@ export const Orders = () => {
 
         const selectedOrdersData = orders.filter(o => selectedOrderIds.includes(o._id));
 
-        let combinedMessage = `*AnsariMart - ${selectedOrdersData.length} Orders*\n\n`;
+        let combinedMessage = `*amart - ${selectedOrdersData.length} Orders*\n\n`;
 
         selectedOrdersData.forEach((order, index) => {
             const orderId = order._id.substring(order._id.length - 8).toUpperCase();
@@ -645,7 +657,7 @@ export const Orders = () => {
                             {['Retail', 'Business'].map((tab) => (
                                 <button
                                     key={tab}
-                                    onClick={() => setTypeFilter(tab)}
+                                    onClick={() => handleTypeFilterChange(tab)}
                                     className={cn(
                                         "px-8 py-3 rounded-xl text-sm font-black transition-all whitespace-nowrap",
                                         typeFilter === tab
@@ -827,7 +839,7 @@ export const Orders = () => {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end space-x-2">
                                                     <button
-                                                        onClick={() => navigate(`/orders/${order._id}`)}
+                                                        onClick={() => navigate(`/orders/${order._id}?type=${encodeURIComponent(typeFilter)}`)}
                                                         title="View Order"
                                                         className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
                                                     >

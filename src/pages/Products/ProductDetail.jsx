@@ -180,7 +180,7 @@ export const ProductDetail = () => {
                         </div>
                         <div className="aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner relative z-10">
                             <img 
-                                src={resolveImageUrl(product.images?.[0]) || 'https://placehold.co/600?text=Ansari+Mart'} 
+                                src={resolveImageUrl(product.images?.[0]) || 'https://placehold.co/600?text=amart'}
                                 alt={product.name}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />

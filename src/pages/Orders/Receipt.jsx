@@ -163,7 +163,7 @@ export const Receipt = ({ order, isBulk = false }) => {
                 }}
             >
                 <div className="text-center mb-4">
-                    <h1 className="text-xl font-bold tracking-tighter uppercase mb-1">Ansari Mart</h1>
+                    <h1 className="text-xl font-bold tracking-tighter uppercase mb-1">amart</h1>
                     <p className="text-[14px] font-bold">Premium Quality Grocery</p>
                     <p className="text-[13px] ">Sector-63, Noida, UP</p>
                     <p className="text-[13px] ">Ph: +91 8707626377</p>

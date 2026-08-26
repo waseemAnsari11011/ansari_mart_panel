@@ -122,7 +122,7 @@ export const HelpSupport = () => {
                                         </div>
                                         <input
                                             type="email"
-                                            placeholder="e.g. support@ansarimart.com"
+                                            placeholder="e.g. support@amart.com"
                                             value={helpData.email}
                                             onChange={(e) => setHelpData({ ...helpData, email: e.target.value })}
                                             className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-black text-sm focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"

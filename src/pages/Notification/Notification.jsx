@@ -7,15 +7,40 @@ import {
     History,
     Image,
     Package,
-    Loader2
+    Loader2,
+    Users,
+    ShoppingBag,
+    Building2
 } from 'lucide-react';
+
+const audiences = [
+    {
+        value: 'All',
+        label: 'All Users',
+        description: 'Send to retail and business users',
+        icon: Users
+    },
+    {
+        value: 'Retail',
+        label: 'Retail Users',
+        description: 'Send only to retail customers',
+        icon: ShoppingBag
+    },
+    {
+        value: 'Business',
+        label: 'Business Users',
+        description: 'Send only to business customers',
+        icon: Building2
+    }
+];
 
 const Notification = () => {
     const [formData, setFormData] = useState({
         title: '',
         message: '',
         product: '',
-        image: null
+        image: null,
+        audience: 'All'
     });
 
     const navigate = useNavigate();
@@ -98,6 +123,7 @@ const Notification = () => {
         data.append("title", formData.title);
         data.append("body", formData.message);
         data.append("productId", formData.product);
+        data.append("audience", formData.audience);
 
         if (formData.image) {
             data.append("image", formData.image);
@@ -120,7 +146,8 @@ const Notification = () => {
                 title: '',
                 message: '',
                 product: '',
-                image: null
+                image: null,
+                audience: 'All'
             });
 
             setSelectedProduct(null);
@@ -172,6 +199,46 @@ const Notification = () => {
                         onSubmit={handleSubmit}
                         className="space-y-5"
                     >
+                        <div>
+                            <label className="block mb-2 font-medium text-slate-700">
+                                Send To
+                            </label>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {audiences.map((audience) => {
+                                    const Icon = audience.icon;
+                                    const isSelected = formData.audience === audience.value;
+
+                                    return (
+                                        <button
+                                            key={audience.value}
+                                            type="button"
+                                            onClick={() => setFormData((prev) => ({
+                                                ...prev,
+                                                audience: audience.value
+                                            }))}
+                                            className={`rounded-xl border p-4 text-left transition-colors ${
+                                                isSelected
+                                                    ? 'border-green-500 bg-green-50 ring-1 ring-green-500'
+                                                    : 'border-slate-300 bg-white hover:border-green-300'
+                                            }`}
+                                            aria-pressed={isSelected}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <Icon className={`w-5 h-5 ${isSelected ? 'text-green-600' : 'text-slate-500'}`} />
+                                                <span className="font-semibold text-slate-800">
+                                                    {audience.label}
+                                                </span>
+                                            </div>
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                {audience.description}
+                                            </p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
                         <div>
                             <label className="block mb-2 font-medium text-slate-700">
                                 Notification Title

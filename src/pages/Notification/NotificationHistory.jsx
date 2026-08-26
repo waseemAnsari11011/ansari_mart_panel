@@ -6,7 +6,8 @@ import {
     Package,
     Image as ImageIcon,
     Loader2,
-    RotateCcw
+    RotateCcw,
+    Users
 } from "lucide-react";
 
 const NotificationHistory = () => {
@@ -178,6 +179,21 @@ const NotificationHistory = () => {
                                                 <p className="text-slate-600 whitespace-pre-wrap">
                                                     {item.body}
                                                 </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-xs font-semibold text-slate-500 uppercase">
+                                                    Audience
+                                                </p>
+
+                                                <div className="inline-flex items-center gap-2 mt-1 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm">
+                                                    <Users size={16} />
+                                                    {item.audience === "Retail"
+                                                        ? "Retail Users"
+                                                        : item.audience === "Business"
+                                                            ? "Business Users"
+                                                            : "All Users"}
+                                                </div>
                                             </div>
 
                                             <div>

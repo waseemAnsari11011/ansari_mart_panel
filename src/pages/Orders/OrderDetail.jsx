@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useGlobalState } from '../../context/GlobalContext';
 import { Receipt } from './Receipt';
 import {
@@ -59,6 +59,7 @@ const getOrderItemDisplay = (item) => {
 export const OrderDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { orders, updateOrders } = useGlobalState();
 
     // Try to find order in cache for instant preview
@@ -66,6 +67,10 @@ export const OrderDetail = () => {
     const [order, setOrder] = useState(cachedOrder || null);
     const [loading, setLoading] = useState(!cachedOrder);
     const [error, setError] = useState('');
+    const requestedType = searchParams.get('type');
+    const returnType = requestedType === 'Retail' || requestedType === 'Business'
+        ? requestedType
+        : (order?.type === 'Business' ? 'Business' : 'Retail');
 
     useEffect(() => {
         const fetchOrder = async () => {
@@ -115,7 +120,7 @@ export const OrderDetail = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*AnsariMart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
 
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
         window.open(whatsappUrl, '_blank');
@@ -201,7 +206,7 @@ export const OrderDetail = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center space-x-4">
                         <button
-                            onClick={() => navigate('/orders')}
+                            onClick={() => navigate(`/orders?type=${encodeURIComponent(returnType)}`)}
                             className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-slate-500 shadow-sm"
                         >
                             <ArrowLeft className="w-5 h-5" />
