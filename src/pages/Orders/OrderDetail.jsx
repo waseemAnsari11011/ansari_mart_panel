@@ -349,7 +349,7 @@ export const OrderDetail = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5 text-center text-sm font-black text-slate-700">
-                                                    {order.status !== 'Cancelled' ? (
+                                                    {!['Cancelled', 'Delivered'].includes(order.status) ? (
                                                         <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 focus-within:ring-2 focus-within:ring-green-500/20">
                                                             <span className="text-slate-500">₹</span>
                                                             <input
