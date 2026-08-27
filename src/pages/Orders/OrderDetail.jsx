@@ -67,6 +67,7 @@ export const OrderDetail = () => {
     const [order, setOrder] = useState(cachedOrder || null);
     const [loading, setLoading] = useState(!cachedOrder);
     const [error, setError] = useState('');
+    const [priceDrafts, setPriceDrafts] = useState({});
     const requestedType = searchParams.get('type');
     const returnType = requestedType === 'Retail' || requestedType === 'Business'
         ? requestedType
@@ -180,6 +181,36 @@ export const OrderDetail = () => {
         } catch (err) {
             setOrder(previousOrder); // Revert on failure
             alert(err.response?.data?.message || 'Failed to update quantity');
+        }
+    };
+
+    const updatePrice = async (itemId, newPrice) => {
+        const item = order.orderItems.find(orderItem => orderItem._id === itemId);
+        if (!item || newPrice === Number(item.price)) {
+            setPriceDrafts(drafts => {
+                const nextDrafts = { ...drafts };
+                delete nextDrafts[itemId];
+                return nextDrafts;
+            });
+            return;
+        }
+
+        try {
+            const { data } = await api.put(`/orders/${id}/update-price`, { itemId, price: newPrice });
+            setOrder(data);
+
+            if (orders.length > 0) {
+                const updatedOrders = orders.map(o => o._id === id ? data : o);
+                updateOrders(updatedOrders);
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update unit price');
+        } finally {
+            setPriceDrafts(drafts => {
+                const nextDrafts = { ...drafts };
+                delete nextDrafts[itemId];
+                return nextDrafts;
+            });
         }
     };
 
@@ -317,7 +348,44 @@ export const OrderDetail = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-5 text-center text-sm font-black text-slate-700">₹{Math.round(item.price)}</td>
+                                                <td className="px-8 py-5 text-center text-sm font-black text-slate-700">
+                                                    {order.status !== 'Cancelled' ? (
+                                                        <div className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 focus-within:ring-2 focus-within:ring-green-500/20">
+                                                            <span className="text-slate-500">₹</span>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                step="1"
+                                                                inputMode="numeric"
+                                                                value={priceDrafts[item._id] ?? item.price}
+                                                                aria-label={`Customer-specific unit price for ${itemDisplay.name}`}
+                                                                onChange={(e) => setPriceDrafts(drafts => ({
+                                                                    ...drafts,
+                                                                    [item._id]: e.target.value
+                                                                }))}
+                                                                onBlur={(e) => {
+                                                                    const value = e.target.value.trim();
+                                                                    const newPrice = Number(value);
+                                                                    if (value === '' || !Number.isInteger(newPrice) || newPrice < 0) {
+                                                                        setPriceDrafts(drafts => {
+                                                                            const nextDrafts = { ...drafts };
+                                                                            delete nextDrafts[item._id];
+                                                                            return nextDrafts;
+                                                                        });
+                                                                        return;
+                                                                    }
+                                                                    updatePrice(item._id, newPrice);
+                                                                }}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') e.currentTarget.blur();
+                                                                }}
+                                                                className="w-20 bg-transparent px-1 py-1.5 text-center text-sm font-black text-slate-700 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <>₹{Math.round(item.price)}</>
+                                                    )}
+                                                </td>
                                                 <td className="px-8 py-5 text-center">
                                                     <div className="flex flex-col items-center gap-1.5">
                                                         {item.tierLabel && (
