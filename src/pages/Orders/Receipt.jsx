@@ -72,7 +72,7 @@ export const Receipt = ({ order, isBulk = false }) => {
     const deliveryFee = Number(order.deliveryFee || 0);
 
     const subtotal =
-        Number(order.totalPrice || 0) - deliveryFee;
+        Number(order.subtotal ?? (Number(order.totalPrice || 0) - deliveryFee + Number(order.discountAmount || 0)));
 
     return (
         <>
@@ -192,11 +192,11 @@ export const Receipt = ({ order, isBulk = false }) => {
                         <span className="text-right">PRICE</span>
                     </div>
                     {(order.orderItems || order.items || [])
-                        .map(getReceiptItem)
+                        .map(raw => ({ ...getReceiptItem(raw), productOffer: order.discountProducts?.find(offer => offer.product === (raw.product?._id || raw.product) && offer.tierIndex === (raw.tierIndex || 0)) }))
                         .filter(item => item.quantity > 0)
                         .map((item, idx) => (
                         <div key={idx} className="grid grid-cols-[minmax(0,1fr)_38px_50px_58px] gap-1 items-start text-[11px]">
-                            <span className="break-words uppercase font-bold">{item.name}</span>
+                            <span className="break-words uppercase font-bold">{item.name}{item.productOffer && <span className="block normal-case font-normal">Offer {item.productOffer.qty} unit at ₹{item.productOffer.offerPrice}/unit; savings below</span>}</span>
                             <span className="text-center uppercase font-bold break-words">{item.weight}</span>
                             <span className="text-center uppercase font-bold break-words">{item.quantityLabel}</span>
                             <span className="text-right font-bold">₹{Math.round(item.price * item.quantity)}</span>
@@ -209,19 +209,22 @@ export const Receipt = ({ order, isBulk = false }) => {
                 <div className="space-y-1 font-bold">
                     <div className="flex justify-between">
                         <span>SUBTOTAL:</span>
-                        <span>₹{Math.round(subtotal)}</span>
+                        <span>₹{Number(subtotal).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                     </div>
 
+                    {order.discountAmount > 0 && <div className="flex justify-between text-[12px]">
+                        <span>{order.discountName || 'Discount'}</span><span>−₹{order.discountAmount}</span>
+                    </div>}
                     {deliveryFee > 0 && (
                         <div className="flex justify-between">
                             <span>DELIVERY FEE:</span>
-                            <span>₹{Math.round(deliveryFee)}</span>
+                            <span>₹{Number(deliveryFee).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                         </div>
                     )}
 
                     <div className="flex justify-between text-sm py-1 border-t border-black/10 mt-1">
                         <span className="text-[16px] font-bold" >NET TOTAL:</span>
-                        <span className="text-[16px] font-bold">₹{Math.round(order.totalPrice || 0)}</span>
+                        <span className="text-[16px] font-bold">₹{Number(order.totalPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
 

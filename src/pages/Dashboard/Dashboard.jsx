@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     TrendingUp,
@@ -10,14 +10,13 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Package,
-    Filter,
-    Calendar,
     ChevronRight,
     Loader2,
     RotateCcw
 } from 'lucide-react';
 import api from '../../utils/api';
-import { useGlobalState } from '../../context/GlobalContext';
+import DateRangeFilter from '../../components/DateRangeFilter';
+import { ALL_TIME, rangeParams } from '../../utils/dateRange';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -27,163 +26,43 @@ function cn(...inputs) {
 
 
 
-const FilterDropdown = ({ isOpen, onClose, onDateSelect }) => {
-    const dropdownRef = useRef(null);
-    const [showRange, setShowRange] = useState(false);
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                onClose();
-                setShowRange(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen, onClose]);
-
-    if (!isOpen) return null;
-
-    const options = [
-        { label: 'Yesterday', value: 'yesterday' },
-        { label: '1 Week Ago', value: '1week' },
-        { label: '1 Month Ago', value: '1month' },
-        { label: 'Select Date Range', value: 'custom', icon: Calendar },
-    ];
-
-    const handleOptionClick = (option) => {
-        if (option.value === 'custom') {
-            setShowRange(true);
-        } else {
-            onDateSelect({ type: option.value });
-            onClose();
-        }
-    };
-
-    const handleApplyRange = () => {
-        if (startDate && endDate) {
-            onDateSelect({ start: startDate, end: endDate, type: 'custom' });
-            onClose();
-            setShowRange(false);
-        } else {
-            alert('Please select both start and end dates');
-        }
-    };
-
-    return (
-        <div
-            ref={dropdownRef}
-            className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in duration-200"
-        >
-            {!showRange ? (
-                options.map((option) => (
-                    <button
-                        key={option.value}
-                        onClick={() => handleOptionClick(option)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-green-600 rounded-xl transition-colors"
-                    >
-                        <span>{option.label}</span>
-                        {option.icon && <option.icon className="w-4 h-4" />}
-                    </button>
-                ))
-            ) : (
-                <div className="p-3 space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Range</span>
-                        <button
-                            onClick={() => setShowRange(false)}
-                            className="text-[10px] font-bold text-slate-400 hover:text-slate-600"
-                        >
-                            Back
-                        </button>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Start Date</label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-bold"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-black text-slate-500 uppercase ml-1">End Date</label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-bold"
-                            />
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleApplyRange}
-                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-black rounded-xl shadow-lg shadow-green-600/20 transition-all active:scale-[0.98]"
-                    >
-                        Apply Range
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-};
-
 export const Dashboard = () => {
     const navigate = useNavigate();
-    const { dashboardData, updateDashboardData, lastFetched } = useGlobalState();
-    const [activeFilter, setActiveFilter] = useState(null);
-    const [loading, setLoading] = useState(!dashboardData);
+    const [dateRange, setDateRange] = useState(ALL_TIME);
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [refreshKey, setRefreshKey] = useState(0);
 
     useEffect(() => {
+        const controller = new AbortController();
         const fetchDashboardData = async () => {
-            if (!dashboardData) setLoading(true);
+            setLoading(true);
+            setError('');
             try {
-                const { data } = await api.get('/admin/dashboard');
-                updateDashboardData(data);
+                const { data } = await api.get('/admin/dashboard', {
+                    params: rangeParams(dateRange), signal: controller.signal
+                });
+                if (!controller.signal.aborted) setDashboardData(data);
             } catch (err) {
-                console.error("Failed to load dashboard data", err);
+                if (!controller.signal.aborted) {
+                    setError('Failed to load dashboard. Please try refreshing.');
+                    console.error('Failed to load dashboard', err);
+                }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
+        fetchDashboardData();
+        return () => controller.abort();
+    }, [dateRange, refreshKey]);
 
-        const shouldFetch = !dashboardData || (Date.now() - lastFetched.dashboard > 5 * 60 * 1000);
-        if (shouldFetch) {
-            fetchDashboardData();
-        } else {
-            setLoading(false);
-        }
-    }, [dashboardData, updateDashboardData, lastFetched.dashboard]);
-
-    const handleRefresh = async () => {
-        setLoading(true);
-        try {
-            const { data } = await api.get('/admin/dashboard');
-            updateDashboardData(data);
-        } catch (err) {
-            console.error("Failed to refresh dashboard", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDateSelect = (range) => {
-        if (range.type === 'custom') {
-            alert(`Filtering Range: ${range.start} - ${range.end}`);
-        } else {
-            alert(`Filtering by: ${range.type}`);
-        }
-    };
+    const handleRefresh = () => setRefreshKey(key => key + 1);
 
     return (
         <div className="space-y-8">
             {/* Welcome Section */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-black text-slate-900">Dashboard Overview</h2>
                     <p className="text-slate-500 font-medium">Welcome back, Admin. Here's what's happening today.</p>
@@ -196,25 +75,14 @@ export const Dashboard = () => {
                     >
                         <RotateCcw className={cn("w-4 h-4", loading && "animate-spin")} />
                     </button>
-                    <div className="relative">
-                        <button
-                            onClick={() => setActiveFilter(activeFilter === 'dashboard' ? null : 'dashboard')}
-                            className="flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-slate-300 transition-all group/filter text-slate-500 hover:text-slate-700 text-sm font-bold"
-                        >
-                            <Filter className="w-4 h-4 group-hover/filter:scale-110 transition-transform" />
-                            <span>Filter</span>
-                        </button>
-                        <FilterDropdown
-                            isOpen={activeFilter === 'dashboard'}
-                            onClose={() => setActiveFilter(null)}
-                            onDateSelect={handleDateSelect}
-                        />
-                    </div>
+                    <DateRangeFilter value={dateRange} onChange={setDateRange} />
                 </div>
             </div>
 
             {/* Stats Grid */}
-            {loading && !dashboardData ? (
+            {error ? (
+                <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-600">{error}</div>
+            ) : loading ? (
                 <div className="flex justify-center items-center py-20">
                     <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
                 </div>
@@ -309,6 +177,7 @@ export const Dashboard = () => {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
+                                        {dashboardData?.recentOrders?.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-sm text-slate-500">No orders found for this date range.</td></tr>}
                                         {dashboardData?.recentOrders?.map((order) => {
                                             const statusColors = {
                                                 'Delivered': 'bg-green-100 text-green-700',

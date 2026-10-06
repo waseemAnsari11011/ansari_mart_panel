@@ -19,6 +19,7 @@ import {
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import api from '../../utils/api';
+import { useGlobalState } from '../../context/GlobalContext';
 import { Loader2 } from 'lucide-react';
 
 function cn(...inputs) {
@@ -27,6 +28,11 @@ function cn(...inputs) {
 
 
 export const UserDetail = () => {
+    const { clearCache } = useGlobalState();
+    const [showConversion, setShowConversion] = useState(false);
+    const [conversionDetails, setConversionDetails] = useState({ shopName: '', businessType: '', businessAddress: '' });
+    const [conversionMessage, setConversionMessage] = useState('');
+    const [conversionError, setConversionError] = useState('');
     const { id } = useParams();
     const navigate = useNavigate();
     const [userData, setUserData] = useState(null);
@@ -75,6 +81,23 @@ export const UserDetail = () => {
         }
     };
 
+    const handleConvert = async event => {
+        event.preventDefault();
+        setActionLoading(true);
+        setConversionError('');
+        try {
+            const { data } = await api.patch(`/users/${id}/convert-to-business`, conversionDetails);
+            setUserData(previous => ({ ...previous, user: data.user }));
+            clearCache();
+            setShowConversion(false);
+            setConversionMessage(data.message);
+        } catch (error) {
+            setConversionError(error.response?.data?.message || 'Could not convert customer. Please try again.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
@@ -113,14 +136,23 @@ export const UserDetail = () => {
                                 "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider",
                                 user.status === 'Blocked' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
                             )}>
-                                {user.status === 'Blocked' ? 'Blocked' : 'Active'}
+                                {user.deletedAt ? 'Deleted' : user.status}
                             </span>
                         </div>
                         <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">#{user._id?.slice(-8).toUpperCase()} • {user.type} Customer</p>
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-3">
+                <div className={user.deletedAt ? "hidden" : "flex flex-wrap items-center gap-3"}>
+                    {user.type === 'Retail' && <button
+                        disabled={actionLoading}
+                        onClick={() => {
+                            setConversionDetails({ shopName: user.businessDetails?.shopName || '', businessType: user.businessDetails?.businessType || '', businessAddress: user.businessDetails?.businessAddress || '' });
+                            setConversionError('');
+                            setShowConversion(true);
+                        }}
+                        className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm disabled:opacity-50"
+                    >Convert to Business</button>}
                     {user.status === 'Blocked' ? (
                         <button 
                             disabled={actionLoading}
@@ -158,6 +190,21 @@ export const UserDetail = () => {
                     )}
                 </div>
             </div>
+
+            {user.deletedAt && <p role="status" className="p-4 rounded-xl bg-red-50 text-red-800">This customer was soft deleted on {new Date(user.deletedAt).toLocaleDateString()}. Their account and order history are preserved; login access is disabled.</p>}
+            {conversionMessage && <p role="status" className="p-4 rounded-xl bg-green-50 text-green-800">{conversionMessage}</p>}
+            {showConversion && !user.deletedAt && user.type === 'Retail' && <form onSubmit={handleConvert} className="bg-white border border-blue-200 rounded-2xl p-6 space-y-4">
+                <h3 className="text-lg font-bold">Convert {user.name || user.phone} to Business</h3>
+                <p className="text-sm text-slate-600">Their phone number, addresses and order history will stay the same. The current retail cart will be cleared. They must log in again through Business login. Business verification will be pending; blocked customers will remain blocked.</p>
+                <fieldset disabled={actionLoading} className="grid md:grid-cols-3 gap-4">
+                    {Object.entries({ shopName: 'Shop name (optional)', businessType: 'Business type (optional)', businessAddress: 'Business address (optional)' }).map(([field, label]) => <label key={field} className="text-sm font-semibold">{label}<input maxLength={500} className="block w-full border border-slate-300 rounded-lg p-2 mt-1" value={conversionDetails[field]} onChange={event => setConversionDetails(previous => ({ ...previous, [field]: event.target.value }))} /></label>)}
+                </fieldset>
+                {conversionError && <p role="alert" className="text-red-600">{conversionError}</p>}
+                <div className="flex gap-3">
+                    <button type="submit" disabled={actionLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold disabled:opacity-50">{actionLoading ? 'Converting…' : 'Confirm conversion'}</button>
+                    <button type="button" disabled={actionLoading} onClick={() => setShowConversion(false)} className="px-4 py-2 border rounded-lg">Cancel</button>
+                </div>
+            </form>}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Profile Overview */}

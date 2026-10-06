@@ -17,13 +17,14 @@ import {
     Store,
     MessageCircle,
     ListChecks,
-    Calendar,
     X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { WhatsAppIcon } from '../../components/WhatsAppIcon';
 import api from '../../utils/api';
+import DateRangeFilter from '../../components/DateRangeFilter';
+import { ALL_TIME, inDateRange } from '../../utils/dateRange';
 import { useGlobalState } from '../../context/GlobalContext';
 
 function cn(...inputs) {
@@ -190,9 +191,7 @@ export const Orders = () => {
     const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
     const [selectedOrderIds, setSelectedOrderIds] = useState([]);
     const [bulkPrintOrders, setBulkPrintOrders] = useState([]);
-    const [dateFilter, setDateFilter] = useState('All');
-    const [customDate, setCustomDate] = useState('');
-    const dateInputRef = useRef(null);
+    const [dateRange, setDateRange] = useState(ALL_TIME);
     const navigate = useNavigate();
 
     const handleTypeFilterChange = (type) => {
@@ -203,17 +202,6 @@ export const Orders = () => {
             return nextParams;
         }, { replace: true });
     };
-
-    useEffect(() => {
-        if (dateFilter === 'Custom' && dateInputRef.current) {
-            try {
-                dateInputRef.current.showPicker();
-            } catch (e) {
-                // Ignore if showPicker is not supported
-                dateInputRef.current.focus();
-            }
-        }
-    }, [dateFilter]);
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -239,46 +227,22 @@ export const Orders = () => {
         }
     }, [orders.length, updateOrders, lastFetched.orders]);
 
-    const filteredOrders = orders.filter(order => {
+    const dateFilteredOrders = orders.filter(order => inDateRange(order.createdAt, dateRange));
+    const filteredOrders = dateFilteredOrders.filter(order => {
         const matchesType = typeFilter === 'All' ||
             (typeFilter === 'Retail' && (order.type === 'Retail' || !order.type)) ||
             (typeFilter === 'Business' && order.type === 'Business');
 
         const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
 
-        const orderDateObj = new Date(order.createdAt);
-        const orderYear = orderDateObj.getFullYear();
-        const orderMonth = orderDateObj.getMonth();
-        const orderDay = orderDateObj.getDate();
-
-        const todayObj = new Date();
-        const yesterdayObj = new Date();
-        yesterdayObj.setDate(todayObj.getDate() - 1);
-
-        let matchesDate = true;
-        if (dateFilter === 'Today') {
-            matchesDate = orderYear === todayObj.getFullYear() &&
-                orderMonth === todayObj.getMonth() &&
-                orderDay === todayObj.getDate();
-        } else if (dateFilter === 'Yesterday') {
-            matchesDate = orderYear === yesterdayObj.getFullYear() &&
-                orderMonth === yesterdayObj.getMonth() &&
-                orderDay === yesterdayObj.getDate();
-        } else if (dateFilter === 'Custom' && customDate) {
-            const [y, m, d] = customDate.split('-').map(Number);
-            matchesDate = orderYear === y &&
-                orderMonth === (m - 1) &&
-                orderDay === d;
-        }
-
-        return matchesType && matchesStatus && matchesDate;
+        return matchesType && matchesStatus;
     });
 
     const counts = {
-        total: orders.length,
-        pending: orders.filter(o => o.status === 'Pending').length,
-        retail: orders.filter(o => o.type === 'Retail' || !o.type).length,
-        business: orders.filter(o => o.type === 'Business').length
+        total: dateFilteredOrders.length,
+        pending: dateFilteredOrders.filter(o => o.status === 'Pending').length,
+        retail: dateFilteredOrders.filter(o => o.type === 'Retail' || !o.type).length,
+        business: dateFilteredOrders.filter(o => o.type === 'Business').length
     };
 
     const handleRefresh = async () => {
@@ -325,7 +289,7 @@ export const Orders = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
         // Open WhatsApp
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
@@ -372,7 +336,7 @@ export const Orders = () => {
                 ? `\n*Location:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
                 : '';
 
-            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}${locationLink}\n*Total:* ₹${Math.round(order.totalPrice)}\n\n`;
+            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}${locationLink}\n*Total:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}\n\n`;
             if (index < selectedOrdersData.length - 1) {
                 combinedMessage += `--------------------------------\n\n`;
             }
@@ -499,44 +463,10 @@ export const Orders = () => {
                         >
                             <RotateCcw className={cn("w-4 h-4", loading && "animate-spin")} />
                         </button>
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center space-x-1 p-1 bg-slate-100/50 rounded-2xl w-fit border border-slate-200/50 shadow-sm h-[42px]">
-                                {['All', 'Today', 'Yesterday'].map((tab) => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => {
-                                            setDateFilter(tab);
-                                            setCustomDate('');
-                                        }}
-                                        className={cn(
-                                            "px-4 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap uppercase tracking-wider h-full",
-                                            dateFilter === tab
-                                                ? "bg-white text-indigo-600 shadow-sm"
-                                                : "text-slate-400 hover:text-slate-600"
-                                        )}
-                                    >
-                                        {tab === 'All' ? 'All Time' : tab}
-                                    </button>
-                                ))}
-                                <div className="relative group h-full">
-                                    <input
-                                        ref={dateInputRef}
-                                        type="date"
-                                        value={customDate}
-                                        onChange={(e) => {
-                                            setCustomDate(e.target.value);
-                                            setDateFilter('Custom');
-                                        }}
-                                        className={cn(
-                                            "px-3 py-2 rounded-xl text-[10px] font-black transition-all whitespace-nowrap bg-transparent focus:outline-none h-full w-[130px] cursor-pointer",
-                                            dateFilter === 'Custom'
-                                                ? "bg-white text-indigo-600 shadow-sm"
-                                                : "text-slate-400 hover:text-slate-600"
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                        <DateRangeFilter value={dateRange} onChange={range => {
+                            setDateRange(range);
+                            setSelectedOrderIds([]);
+                        }} />
                     </div>
                 </div>
 
@@ -799,7 +729,7 @@ export const Orders = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-black text-slate-900">₹{Math.round(order.totalPrice)}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-slate-900">₹{Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
                                             <td className="px-6 py-4">
                                                 <div className="space-y-1">
                                                     <div className="flex items-center text-[11px] font-bold text-slate-500">

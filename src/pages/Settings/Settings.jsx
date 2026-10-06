@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DiscountSettings from './DiscountSettings';
 import api, { resolveImageUrl } from '../../utils/api';
 import {
     Truck,
@@ -227,6 +228,9 @@ export const Settings = () => {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div className="col-span-full">
+                    {!loading && <DiscountSettings key={JSON.stringify(settings?.discountRules || [])} initialRules={settings?.discountRules} onSave={updateSettings} />}
+                </div>
                 {/* Banner Management */}
                 <div className="xl:col-span-2 flex flex-col">
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-slate-900 h-full flex flex-col">

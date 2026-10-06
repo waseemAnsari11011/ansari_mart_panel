@@ -29,8 +29,12 @@ export const UsersManagement = ({ type }) => {
     const { 
         retailUsers, businessUsers,
         updateRetailUsers, updateBusinessUsers,
-        lastFetched 
+        lastFetched, clearCache
     } = useGlobalState();
+    const [selection, setSelection] = useState({ type, ids: [] });
+    const [deleting, setDeleting] = useState(false);
+    const [deleteMessage, setDeleteMessage] = useState('');
+    const [deleteError, setDeleteError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     
     const users = type === 'Business' ? businessUsers : retailUsers;
@@ -51,7 +55,7 @@ export const UsersManagement = ({ type }) => {
         };
 
         const lastFetchTime = type === 'Business' ? lastFetched.businessUsers : lastFetched.retailUsers;
-        const shouldFetch = users.length === 0 || (Date.now() - lastFetchTime > 5 * 60 * 1000);
+        const shouldFetch = !lastFetchTime || (Date.now() - lastFetchTime > 5 * 60 * 1000);
         
         if (shouldFetch) {
             fetchUsers();
@@ -107,6 +111,30 @@ export const UsersManagement = ({ type }) => {
         u.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    const selectedIds = selection.type === type ? selection.ids.filter(id => filteredUsers.some(user => user._id === id)) : [];
+    const allSelected = filteredUsers.length > 0 && filteredUsers.every(user => selectedIds.includes(user._id));
+    const toggleCustomer = id => setSelection({ type, ids: selectedIds.includes(id) ? selectedIds.filter(selected => selected !== id) : [...selectedIds, id] });
+    const handleBulkDelete = async () => {
+        if (!selectedIds.length || deleting) return;
+        if (!window.confirm(`Soft delete ${selectedIds.length} selected customer(s)? They will no longer be able to log in. Customer records and order history will be preserved.`)) return;
+        setDeleting(true);
+        setDeleteError('');
+        setDeleteMessage('');
+        try {
+            const { data } = await api.post('/users/bulk-delete', { ids: selectedIds });
+            const deleted = new Set(data.ids);
+            updateRetailUsers(retailUsers.filter(user => !deleted.has(user._id)));
+            updateBusinessUsers(businessUsers.filter(user => !deleted.has(user._id)));
+            clearCache();
+            setSelection({ type, ids: [] });
+            setDeleteMessage(data.message);
+        } catch (error) {
+            setDeleteError(error.response?.data?.message || 'Could not delete customers. Please try again.');
+        } finally {
+            setDeleting(false);
+        }
+    };
 
     const activeCount = users.filter(u => u.status === 'Active').length;
 
@@ -168,9 +196,18 @@ export const UsersManagement = ({ type }) => {
                             placeholder="Search by name, phone..." 
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm outline-none" 
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={deleting}
+                            onChange={(e) => { setSearchTerm(e.target.value); setSelection({ type, ids: [] }); }}
                         />
                     </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 p-4 border-b border-slate-100">
+                    <span className="text-sm text-slate-600">{selectedIds.length} selected</span>
+                    <button type="button" onClick={handleBulkDelete} disabled={deleting || !selectedIds.length || selectedIds.length > 500} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-bold disabled:opacity-40">{deleting ? 'Deleting…' : 'Delete selected'}</button>
+                    {selectedIds.length > 0 && <button type="button" disabled={deleting} onClick={() => setSelection({ type, ids: [] })} className="text-sm text-slate-600">Clear selection</button>}
+                    <span className="text-xs text-slate-500">Soft delete preserves customer records and orders. Select up to 500 customers per batch.</span>
+                    {deleteMessage && <p role="status" className="w-full text-sm text-green-700">{deleteMessage}</p>}
+                    {deleteError && <p role="alert" className="w-full text-sm text-red-600">{deleteError}</p>}
                 </div>
                 <div className="overflow-x-auto">
                     {loading && users.length === 0 ? (
@@ -181,6 +218,7 @@ export const UsersManagement = ({ type }) => {
                         <table className="w-full text-left">
                         <thead>
                             <tr className="bg-slate-50/50">
+                                <th className="px-4 py-4"><input type="checkbox" aria-label="Select all customers matching this search" checked={allSelected} ref={element => { if (element) element.indeterminate = selectedIds.length > 0 && !allSelected; }} disabled={deleting || !filteredUsers.length} onChange={() => setSelection({ type, ids: allSelected ? [] : filteredUsers.map(user => user._id) })} /></th>
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">User Details</th>
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Contact Info</th>
                                 <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Join Date</th>
@@ -192,8 +230,10 @@ export const UsersManagement = ({ type }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
+                            {!filteredUsers.length && <tr><td colSpan={type === 'Business' ? 7 : 6} className="p-8 text-center text-slate-500">No customers found.</td></tr>}
                             {filteredUsers.map((user) => (
                                 <tr key={user._id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-4 py-4"><input type="checkbox" aria-label={`Select ${user.name || user.phone}`} checked={selectedIds.includes(user._id)} disabled={deleting} onChange={() => toggleCustomer(user._id)} /></td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center space-x-4">
                                             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 border border-slate-200">

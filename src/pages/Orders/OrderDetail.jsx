@@ -93,7 +93,7 @@ export const OrderDetail = () => {
 
     const totalPrice = Number(order?.totalPrice) || 0;
     const deliveryFee = Number(order?.deliveryFee) || 0;
-    const itemSubtotal = Math.max(totalPrice - deliveryFee, 0);
+    const itemSubtotal = Number(order?.subtotal ?? Math.max(totalPrice - deliveryFee + Number(order?.discountAmount || 0), 0));
 
     const handleWhatsAppShare = () => {
         if (!order) return;
@@ -121,7 +121,7 @@ export const OrderDetail = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Math.round(order.totalPrice)}`;
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
         window.open(whatsappUrl, '_blank');
@@ -150,25 +150,7 @@ export const OrderDetail = () => {
     const updateQuantity = async (itemId, newQty) => {
         const previousOrder = order;
         
-        // Optimistically update local state for instant UI feedback
-        const optimisticOrderItems = order.orderItems.map(item => {
-            if (item._id === itemId) {
-                return { ...item, qty: newQty };
-            }
-            return item;
-        });
-
-        const newItemsSubtotal = optimisticOrderItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
-        const currentDeliveryFee = Number(order.deliveryFee) || 0;
-        
-        const optimisticOrder = {
-            ...order,
-            orderItems: optimisticOrderItems,
-            totalPrice: newItemsSubtotal + currentDeliveryFee
-        };
-
-        setOrder(optimisticOrder);
-
+        // Wait for server recalculation of discount and delivery eligibility.
         try {
             const { data } = await api.put(`/orders/${id}/update-quantity`, { itemId, qty: newQty });
             setOrder(data);
@@ -329,6 +311,7 @@ export const OrderDetail = () => {
                                     <tbody className="divide-y divide-slate-100">
                                         {(order.orderItems || []).map((item, idx) => {
                                             const itemDisplay = getOrderItemDisplay(item);
+                                            const productOffer = order.discountProducts?.find(offer => offer.product === (item.product?._id || item.product) && offer.tierIndex === (item.tierIndex || 0));
 
                                             return (
                                             <tr key={idx} className="hover:bg-slate-50/30 transition-colors">
@@ -344,6 +327,7 @@ export const OrderDetail = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-black text-slate-900 leading-tight group-hover/item:text-green-600 transition-colors">{itemDisplay.name}</p>
+                                                            {productOffer && <p className="text-xs text-green-700">Offer: {productOffer.qty} unit at ₹{productOffer.offerPrice}/unit (savings deducted below)</p>}
                                                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{item.product?._id || item.product || 'ID N/A'}</p>
                                                         </div>
                                                     </div>
@@ -444,12 +428,15 @@ export const OrderDetail = () => {
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
                                     <span>Item Subtotal</span>
-                                    <span>₹{Math.round(itemSubtotal)}</span>
+                                    <span>₹{Number(itemSubtotal).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                                 </div>
+                                {order.discountAmount > 0 && <div className="flex justify-between text-green-400 text-sm gap-3">
+                                    <span>{order.discountName || 'Discount'}</span><span>−₹{order.discountAmount}</span>
+                                </div>}
                                 <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
                                     <span>Delivery Fee</span>
                                     <span className={deliveryFee > 0 ? "text-slate-300" : "text-green-400"}>
-                                        {deliveryFee > 0 ? `₹${Math.round(deliveryFee)}` : 'FREE'}
+                                        {deliveryFee > 0 ? `₹${Number(deliveryFee).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'FREE'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
@@ -457,7 +444,7 @@ export const OrderDetail = () => {
                                         <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Amount</span>
                                         <span className="text-xs font-bold text-slate-500">Includes all taxes</span>
                                     </div>
-                                    <span className="text-3xl font-black text-orange-500">₹{Math.round(totalPrice)}</span>
+                                    <span className="text-3xl font-black text-orange-500">₹{Number(totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
 
