@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import { useRef, useState, useLayoutEffect } from 'react';
 
 const RECEIPT_WIDTH_MM = 80;
@@ -196,10 +197,10 @@ export const Receipt = ({ order, isBulk = false }) => {
                         .filter(item => item.quantity > 0)
                         .map((item, idx) => (
                         <div key={idx} className="grid grid-cols-[minmax(0,1fr)_38px_50px_58px] gap-1 items-start text-[11px]">
-                            <span className="break-words uppercase font-bold">{item.name}{item.productOffer && <span className="block normal-case font-normal">Offer {item.productOffer.qty} unit at ₹{item.productOffer.offerPrice}/unit; savings below</span>}</span>
+                            <span className="break-words uppercase font-bold">{item.name}{item.productOffer && <span className="block normal-case font-normal">Offer {item.productOffer.qty} unit at ₹{formatPrice(item.productOffer.offerPrice)}/unit; savings below</span>}</span>
                             <span className="text-center uppercase font-bold break-words">{item.weight}</span>
                             <span className="text-center uppercase font-bold break-words">{item.quantityLabel}</span>
-                            <span className="text-right font-bold">₹{Math.round(item.price * item.quantity)}</span>
+                            <span className="text-right font-bold">₹{formatPrice(Math.round(item.price * item.quantity))}</span>
                         </div>
                     ))}
                 </div>
@@ -209,22 +210,22 @@ export const Receipt = ({ order, isBulk = false }) => {
                 <div className="space-y-1 font-bold">
                     <div className="flex justify-between">
                         <span>SUBTOTAL:</span>
-                        <span>₹{Number(subtotal).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        <span>₹{formatPrice(Number(subtotal))}</span>
                     </div>
 
                     {order.discountAmount > 0 && <div className="flex justify-between text-[12px]">
-                        <span>{order.discountName || 'Discount'}</span><span>−₹{order.discountAmount}</span>
+                        <span>{order.discountName || 'Discount'}</span><span>−₹{formatPrice(order.discountAmount)}</span>
                     </div>}
                     {deliveryFee > 0 && (
                         <div className="flex justify-between">
                             <span>DELIVERY FEE:</span>
-                            <span>₹{Number(deliveryFee).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                            <span>₹{formatPrice(Number(deliveryFee))}</span>
                         </div>
                     )}
 
                     <div className="flex justify-between text-sm py-1 border-t border-black/10 mt-1">
                         <span className="text-[16px] font-bold" >NET TOTAL:</span>
-                        <span className="text-[16px] font-bold">₹{Number(order.totalPrice || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                        <span className="text-[16px] font-bold">₹{formatPrice(Number(order.totalPrice || 0))}</span>
                     </div>
                 </div>
 

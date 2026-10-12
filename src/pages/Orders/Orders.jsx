@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Receipt } from './Receipt';
@@ -280,8 +281,10 @@ export const Orders = () => {
         if (itemsList.length > 0) {
             itemsText = itemsList.map(item => {
                 const itemDisplay = getOrderItemDisplay(item);
-                const p = item.price || item.product?.price || 0;
-                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
+                const price = Number(item.price ?? item.product?.price ?? 0);
+                const quantity = Number(itemDisplay.quantity);
+
+                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${formatPrice(price)} × ${quantity} = ₹${formatPrice(price * quantity)}`;
             }).join('\n');
         }
 
@@ -289,7 +292,12 @@ export const Orders = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        const deliveryCharge = Number(order.deliveryFee ?? 0);
+        const discount = Number(order.discountAmount ?? 0);
+        const subtotal = Number(order.subtotal ?? Math.max(Number(order.totalPrice ?? 0) - deliveryCharge + discount, 0));
+        const pricingText = `*Subtotal:* ₹${formatPrice(subtotal)}\n*Delivery Charge:* ${deliveryCharge > 0 ? `₹${formatPrice(deliveryCharge)}` : 'FREE'}${discount > 0 ? `\n*Discount:* −₹${formatPrice(discount)}` : ''}\n*Total Amount:* ₹${formatPrice(order.totalPrice ?? 0)}`;
+
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n${pricingText}`;
 
         // Open WhatsApp
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
@@ -328,7 +336,7 @@ export const Orders = () => {
                 itemsText = itemsList.map(item => {
                     const itemDisplay = getOrderItemDisplay(item);
                     const p = item.price || item.product?.price || 0;
-                    return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
+                    return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${formatPrice(Math.round(p))}`;
                 }).join('\n');
             }
 
@@ -336,7 +344,7 @@ export const Orders = () => {
                 ? `\n*Location:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
                 : '';
 
-            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}${locationLink}\n*Total:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}\n\n`;
+            combinedMessage += `*${index + 1}. Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n*Items:*\n${itemsText}${locationLink}\n*Total:* ₹${formatPrice(Number(order.totalPrice))}\n\n`;
             if (index < selectedOrdersData.length - 1) {
                 combinedMessage += `--------------------------------\n\n`;
             }
@@ -729,7 +737,7 @@ export const Orders = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm font-black text-slate-900">₹{Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+                                            <td className="px-6 py-4 text-sm font-black text-slate-900">₹{formatPrice(Number(order.totalPrice))}</td>
                                             <td className="px-6 py-4">
                                                 <div className="space-y-1">
                                                     <div className="flex items-center text-[11px] font-bold text-slate-500">

@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Plus,
@@ -400,7 +401,7 @@ export const Products = () => {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 <span className="text-sm font-black text-slate-900">
-                                                    ₹{product.mrp || 0}
+                                                    ₹{formatPrice(product.mrp || 0)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-center">

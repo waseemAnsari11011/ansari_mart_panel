@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -92,7 +93,7 @@ export const Dashboard = () => {
                         {[
                             {
                                 label: 'Total Sales',
-                                value: `₹${(dashboardData?.stats?.totalSales || 0).toLocaleString()}`,
+                                value: `₹${formatPrice(dashboardData?.stats?.totalSales || 0)}`,
                                 change: '+0%', // Placeholder for future comparison logic
                                 isPositive: true,
                                 icon: TrendingUp,
@@ -202,7 +203,7 @@ export const Dashboard = () => {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm font-bold text-slate-900">₹{order.totalPrice}</td>
+                                                    <td className="px-6 py-4 text-sm font-bold text-slate-900">₹{formatPrice(order.totalPrice)}</td>
                                                     <td className="px-6 py-4">
                                                         <span className={`px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider ${statusColors[order.status] || 'bg-slate-100 text-slate-700'}`}>
                                                             {order.status}

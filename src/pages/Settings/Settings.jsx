@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import DiscountSettings from './DiscountSettings';
 import api, { resolveImageUrl } from '../../utils/api';
@@ -388,10 +389,10 @@ export const Settings = () => {
                             )}>
                                 <p className="font-black uppercase tracking-widest text-[10px] mb-1 opacity-60">Preview Rule</p>
                                 <p>
-                                    Orders below <span className="font-black">₹{deliveryCharges[logisticsTab].mov || '0'}</span> → Delivery fee: <span className="font-black">₹{deliveryCharges[logisticsTab].deliveryCharge || '0'}</span>
+                                    Orders below <span className="font-black">₹{formatPrice(deliveryCharges[logisticsTab].mov || '0')}</span> → Delivery fee: <span className="font-black">₹{formatPrice(deliveryCharges[logisticsTab].deliveryCharge || '0')}</span>
                                 </p>
                                 <p className="mt-0.5 opacity-70">
-                                    Orders ₹{deliveryCharges[logisticsTab].mov || '0'} or above → <span className="font-black">FREE delivery</span>
+                                    Orders ₹{formatPrice(deliveryCharges[logisticsTab].mov || '0')} or above → <span className="font-black">FREE delivery</span>
                                 </p>
                             </div>
 

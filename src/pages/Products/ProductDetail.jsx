@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -105,7 +106,7 @@ export const ProductDetail = () => {
                     "text-lg font-black",
                     type === 'business' ? 'text-blue-600' : 'text-green-600'
                 )}>
-                    ₹{tier.price}
+                    ₹{formatPrice(tier.price)}
                 </span>
             </div>
             <div className="flex justify-between items-center mb-4">
@@ -203,7 +204,7 @@ export const ProductDetail = () => {
                            Product Specifications
                        </h4>
                         {[
-                            { label: 'MRP', value: `₹${product.mrp || 0}`, icon: IndianRupee, color: 'text-blue-500' },
+                            { label: 'MRP', value: `₹${formatPrice(product.mrp || 0)}`, icon: IndianRupee, color: 'text-blue-500' },
                             { label: 'Category', value: product.category?.name || 'Uncategorized', icon: Tag, color: 'text-purple-500' },
                             { label: 'Weight', value: product.brand || 'N/A', icon: CheckCircle2, color: 'text-green-500' }
                         ].map((spec, i) => (

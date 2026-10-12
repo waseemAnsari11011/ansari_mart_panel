@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useGlobalState } from '../../context/GlobalContext';
@@ -112,8 +113,10 @@ export const OrderDetail = () => {
         if (itemsList.length > 0) {
             itemsText = itemsList.map(item => {
                 const itemDisplay = getOrderItemDisplay(item);
-                const p = item.price || item.product?.price || 0;
-                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${Math.round(p)}`;
+                const price = Number(item.price ?? item.product?.price ?? 0);
+                const quantity = Number(itemDisplay.quantity);
+
+                return `- ${itemDisplay.name} (${itemDisplay.quantityLabel}) - ₹${formatPrice(price)} × ${quantity} = ₹${formatPrice(price * quantity)}`;
             }).join('\n');
         }
 
@@ -121,7 +124,12 @@ export const OrderDetail = () => {
             ? `\n\n*Location Tracking:* https://www.google.com/maps?q=${order.shippingAddress.latitude},${order.shippingAddress.longitude}`
             : '';
 
-        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n*Total Amount:* ₹${Number(order.totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+        const deliveryCharge = Number(order.deliveryFee ?? 0);
+        const discount = Number(order.discountAmount ?? 0);
+        const subtotal = Number(order.subtotal ?? Math.max(Number(order.totalPrice ?? 0) - deliveryCharge + discount, 0));
+        const pricingText = `*Subtotal:* ₹${formatPrice(subtotal)}\n*Delivery Charge:* ${deliveryCharge > 0 ? `₹${formatPrice(deliveryCharge)}` : 'FREE'}${discount > 0 ? `\n*Discount:* −₹${formatPrice(discount)}` : ''}\n*Total Amount:* ₹${formatPrice(order.totalPrice ?? 0)}`;
+
+        const rawMessage = `*amart Order Details*\n\n*Order ID:* #${orderId}\n*Customer:* ${customerName}${phone ? `\n*Phone:* ${phone}` : ''}${address ? `\n*Address:* ${address}` : ''}\n\n*Items:*\n${itemsText}${locationLink}\n\n${pricingText}`;
 
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(rawMessage)}`;
         window.open(whatsappUrl, '_blank');
@@ -327,7 +335,7 @@ export const OrderDetail = () => {
                                                         </div>
                                                         <div>
                                                             <p className="text-sm font-black text-slate-900 leading-tight group-hover/item:text-green-600 transition-colors">{itemDisplay.name}</p>
-                                                            {productOffer && <p className="text-xs text-green-700">Offer: {productOffer.qty} unit at ₹{productOffer.offerPrice}/unit (savings deducted below)</p>}
+                                                            {productOffer && <p className="text-xs text-green-700">Offer: {productOffer.qty} unit at ₹{formatPrice(productOffer.offerPrice)}/unit (savings deducted below)</p>}
                                                             <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">{item.product?._id || item.product || 'ID N/A'}</p>
                                                         </div>
                                                     </div>
@@ -404,7 +412,7 @@ export const OrderDetail = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-5 text-right text-sm font-black text-slate-900">₹{Math.round(item.price * item.qty)}</td>
+                                                <td className="px-8 py-5 text-right text-sm font-black text-slate-900">₹{formatPrice(Math.round(item.price * item.qty))}</td>
                                             </tr>
                                             );
                                         })}
@@ -428,15 +436,15 @@ export const OrderDetail = () => {
                             <div className="space-y-4 mb-8">
                                 <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
                                     <span>Item Subtotal</span>
-                                    <span>₹{Number(itemSubtotal).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                    <span>₹{formatPrice(Number(itemSubtotal))}</span>
                                 </div>
                                 {order.discountAmount > 0 && <div className="flex justify-between text-green-400 text-sm gap-3">
-                                    <span>{order.discountName || 'Discount'}</span><span>−₹{order.discountAmount}</span>
+                                    <span>{order.discountName || 'Discount'}</span><span>−₹{formatPrice(order.discountAmount)}</span>
                                 </div>}
                                 <div className="flex justify-between items-center text-slate-400 text-sm font-bold pb-4 border-b border-white/5">
                                     <span>Delivery Fee</span>
                                     <span className={deliveryFee > 0 ? "text-slate-300" : "text-green-400"}>
-                                        {deliveryFee > 0 ? `₹${Number(deliveryFee).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : 'FREE'}
+                                        {deliveryFee > 0 ? `₹${formatPrice(Number(deliveryFee))}` : 'FREE'}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2">
@@ -444,7 +452,7 @@ export const OrderDetail = () => {
                                         <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Total Amount</span>
                                         <span className="text-xs font-bold text-slate-500">Includes all taxes</span>
                                     </div>
-                                    <span className="text-3xl font-black text-orange-500">₹{Number(totalPrice).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                    <span className="text-3xl font-black text-orange-500">₹{formatPrice(Number(totalPrice))}</span>
                                 </div>
                             </div>
 

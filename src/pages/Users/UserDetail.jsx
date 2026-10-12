@@ -1,3 +1,4 @@
+import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -86,7 +87,8 @@ export const UserDetail = () => {
         setActionLoading(true);
         setConversionError('');
         try {
-            const { data } = await api.patch(`/users/${id}/convert-to-business`, conversionDetails);
+            const target = userData.user.type === 'Retail' ? 'business' : 'retail';
+            const { data } = await api.patch(`/users/${id}/convert-to-${target}`, target === 'business' ? conversionDetails : {});
             setUserData(previous => ({ ...previous, user: data.user }));
             clearCache();
             setShowConversion(false);
@@ -144,7 +146,7 @@ export const UserDetail = () => {
                 </div>
 
                 <div className={user.deletedAt ? "hidden" : "flex flex-wrap items-center gap-3"}>
-                    {user.type === 'Retail' && <button
+                    {['Retail', 'Business'].includes(user.type) && <button
                         disabled={actionLoading}
                         onClick={() => {
                             setConversionDetails({ shopName: user.businessDetails?.shopName || '', businessType: user.businessDetails?.businessType || '', businessAddress: user.businessDetails?.businessAddress || '' });
@@ -152,7 +154,7 @@ export const UserDetail = () => {
                             setShowConversion(true);
                         }}
                         className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm disabled:opacity-50"
-                    >Convert to Business</button>}
+                    >{user.type === 'Retail' ? 'Convert to Business' : 'Convert to Retail'}</button>}
                     {user.status === 'Blocked' ? (
                         <button 
                             disabled={actionLoading}
@@ -193,12 +195,12 @@ export const UserDetail = () => {
 
             {user.deletedAt && <p role="status" className="p-4 rounded-xl bg-red-50 text-red-800">This customer was soft deleted on {new Date(user.deletedAt).toLocaleDateString()}. Their account and order history are preserved; login access is disabled.</p>}
             {conversionMessage && <p role="status" className="p-4 rounded-xl bg-green-50 text-green-800">{conversionMessage}</p>}
-            {showConversion && !user.deletedAt && user.type === 'Retail' && <form onSubmit={handleConvert} className="bg-white border border-blue-200 rounded-2xl p-6 space-y-4">
-                <h3 className="text-lg font-bold">Convert {user.name || user.phone} to Business</h3>
-                <p className="text-sm text-slate-600">Their phone number, addresses and order history will stay the same. The current retail cart will be cleared. They must log in again through Business login. Business verification will be pending; blocked customers will remain blocked.</p>
-                <fieldset disabled={actionLoading} className="grid md:grid-cols-3 gap-4">
+            {showConversion && !user.deletedAt && ['Retail', 'Business'].includes(user.type) && <form onSubmit={handleConvert} className="bg-white border border-blue-200 rounded-2xl p-6 space-y-4">
+                <h3 className="text-lg font-bold">Convert {user.name || user.phone} to {user.type === 'Retail' ? 'Business' : 'Retail'}</h3>
+                <p className="text-sm text-slate-600">Their phone number, addresses and order history will stay the same. The current cart will be cleared. They must log in again through {user.type === 'Retail' ? 'Business' : 'Retail'} login. {user.type === 'Retail' ? 'Business verification will be pending.' : 'Retail access will be active; saved business documentation will be retained.'} Blocked customers will remain blocked.</p>
+                {user.type === 'Retail' && <fieldset disabled={actionLoading} className="grid md:grid-cols-3 gap-4">
                     {Object.entries({ shopName: 'Shop name (optional)', businessType: 'Business type (optional)', businessAddress: 'Business address (optional)' }).map(([field, label]) => <label key={field} className="text-sm font-semibold">{label}<input maxLength={500} className="block w-full border border-slate-300 rounded-lg p-2 mt-1" value={conversionDetails[field]} onChange={event => setConversionDetails(previous => ({ ...previous, [field]: event.target.value }))} /></label>)}
-                </fieldset>
+                </fieldset>}
                 {conversionError && <p role="alert" className="text-red-600">{conversionError}</p>}
                 <div className="flex gap-3">
                     <button type="submit" disabled={actionLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold disabled:opacity-50">{actionLoading ? 'Converting…' : 'Confirm conversion'}</button>
@@ -395,7 +397,7 @@ export const UserDetail = () => {
                                         <tr key={order._id} className="hover:bg-slate-50/50 transition-colors">
                                             <td className="px-6 py-4 text-sm text-slate-900">#{order._id.slice(-6).toUpperCase()}</td>
                                             <td className="px-6 py-4 text-sm text-slate-600">{new Date(order.createdAt).toLocaleDateString()}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-900">₹{order.totalPrice.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-sm text-slate-900">₹{formatPrice(order.totalPrice)}</td>
                                             <td className="px-6 py-4">
                                                 <span className={cn(
                                                     "px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider",
