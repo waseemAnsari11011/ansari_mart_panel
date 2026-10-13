@@ -189,7 +189,7 @@ const NotificationHistory = () => {
                                                 <div className="inline-flex items-center gap-2 mt-1 bg-blue-50 text-blue-700 px-3 py-2 rounded-lg text-sm">
                                                     <Users size={16} />
                                                     {item.audience === "Retail"
-                                                        ? "Retail Users"
+                                                        ? "Customer Users"
                                                         : item.audience === "Business"
                                                             ? "Business Users"
                                                             : "All Users"}

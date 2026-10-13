@@ -366,7 +366,7 @@ export const Products = () => {
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Product Details</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Category</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">MRP (₹)</th>
-                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Retail Status</th>
+                                    <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Customer Status</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-center">Business Status</th>
                                     <th className="px-6 py-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                                 </tr>

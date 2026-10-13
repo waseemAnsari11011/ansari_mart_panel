@@ -298,7 +298,7 @@ export const AddProduct = () => {
                             <label className="text-sm font-bold">Visibility Status</label>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Retail Users</p>
+                                    <p className="text-xs font-black text-slate-500 uppercase tracking-wider">Customer Users</p>
                                     <div className="flex items-center space-x-4">
                                         <label className="flex items-center space-x-2 cursor-pointer">
                                             <input
@@ -355,7 +355,7 @@ export const AddProduct = () => {
                             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                                 <div className="flex items-center space-x-2">
                                     <IndianRupee className="w-5 h-5 text-blue-600" />
-                                    <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">Retail Pricing Tiers</h4>
+                                    <h4 className="font-black text-slate-900 uppercase tracking-wider text-xs">Customer Pricing Tiers</h4>
                                 </div>
                                 <button
                                     type="button"

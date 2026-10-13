@@ -25,7 +25,7 @@ function cn(...inputs) {
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-  { name: 'Retail Customers', icon: Users, path: '/customers' },
+  { name: 'Customer Customers', icon: Users, path: '/customers' },
   { name: 'Business Users', icon: Store, path: '/business' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Categories', icon: Layers, path: '/categories' },

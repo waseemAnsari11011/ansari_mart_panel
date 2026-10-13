@@ -1,3 +1,4 @@
+import { customerText } from '../../utils/customerLabels';
 import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -112,7 +113,7 @@ export const Dashboard = () => {
                                 hasFilter: true
                             },
                             {
-                                label: 'Retail Users',
+                                label: 'Customer Users',
                                 value: dashboardData?.stats?.retailUsers || 0,
                                 change: '+0%',
                                 isPositive: true,
@@ -199,7 +200,7 @@ export const Dashboard = () => {
                                                                 "text-[9px] font-black uppercase px-1.5 py-0.5 rounded w-fit mt-1",
                                                                 order.type === 'Business' ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"
                                                             )}>
-                                                                {order.type || 'Retail'}
+                                                                {customerText(order.type || 'Retail')}
                                                             </span>
                                                         </div>
                                                     </td>

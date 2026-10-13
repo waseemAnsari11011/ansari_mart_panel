@@ -1,3 +1,4 @@
+import { customerText } from '../../utils/customerLabels';
 import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -141,7 +142,7 @@ export const UserDetail = () => {
                                 {user.deletedAt ? 'Deleted' : user.status}
                             </span>
                         </div>
-                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">#{user._id?.slice(-8).toUpperCase()} • {user.type} Customer</p>
+                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">#{user._id?.slice(-8).toUpperCase()} • {user.type === 'Business' ? 'Business Customer' : 'Customer'}</p>
                     </div>
                 </div>
 
@@ -154,7 +155,7 @@ export const UserDetail = () => {
                             setShowConversion(true);
                         }}
                         className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm disabled:opacity-50"
-                    >{user.type === 'Retail' ? 'Convert to Business' : 'Convert to Retail'}</button>}
+                    >{user.type === 'Retail' ? 'Convert to Business' : 'Convert to Customer'}</button>}
                     {user.status === 'Blocked' ? (
                         <button 
                             disabled={actionLoading}
@@ -194,10 +195,10 @@ export const UserDetail = () => {
             </div>
 
             {user.deletedAt && <p role="status" className="p-4 rounded-xl bg-red-50 text-red-800">This customer was soft deleted on {new Date(user.deletedAt).toLocaleDateString()}. Their account and order history are preserved; login access is disabled.</p>}
-            {conversionMessage && <p role="status" className="p-4 rounded-xl bg-green-50 text-green-800">{conversionMessage}</p>}
+            {conversionMessage && <p role="status" className="p-4 rounded-xl bg-green-50 text-green-800">{customerText(conversionMessage)}</p>}
             {showConversion && !user.deletedAt && ['Retail', 'Business'].includes(user.type) && <form onSubmit={handleConvert} className="bg-white border border-blue-200 rounded-2xl p-6 space-y-4">
-                <h3 className="text-lg font-bold">Convert {user.name || user.phone} to {user.type === 'Retail' ? 'Business' : 'Retail'}</h3>
-                <p className="text-sm text-slate-600">Their phone number, addresses and order history will stay the same. The current cart will be cleared. They must log in again through {user.type === 'Retail' ? 'Business' : 'Retail'} login. {user.type === 'Retail' ? 'Business verification will be pending.' : 'Retail access will be active; saved business documentation will be retained.'} Blocked customers will remain blocked.</p>
+                <h3 className="text-lg font-bold">Convert {user.name || user.phone} to {user.type === 'Retail' ? 'Business' : 'Customer'}</h3>
+                <p className="text-sm text-slate-600">Their phone number, addresses and order history will stay the same. The current cart will be cleared. They must log in again through {user.type === 'Retail' ? 'Business' : 'Customer'} login. {user.type === 'Retail' ? 'Business verification will be pending.' : 'Customer access will be active; saved business documentation will be retained.'} Blocked customers will remain blocked.</p>
                 {user.type === 'Retail' && <fieldset disabled={actionLoading} className="grid md:grid-cols-3 gap-4">
                     {Object.entries({ shopName: 'Shop name (optional)', businessType: 'Business type (optional)', businessAddress: 'Business address (optional)' }).map(([field, label]) => <label key={field} className="text-sm font-semibold">{label}<input maxLength={500} className="block w-full border border-slate-300 rounded-lg p-2 mt-1" value={conversionDetails[field]} onChange={event => setConversionDetails(previous => ({ ...previous, [field]: event.target.value }))} /></label>)}
                 </fieldset>}
@@ -221,7 +222,7 @@ export const UserDetail = () => {
                                 )}
                             </div>
                             <h3 className="text-xl font-black text-slate-900">{user.name}</h3>
-                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">{user.type} Profile</p>
+                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">{customerText(user.type)} Profile</p>
                         </div>
                         <div className="p-8 space-y-6">
                             <div className="flex items-center space-x-4">

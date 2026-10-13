@@ -17,13 +17,13 @@ const audiences = [
     {
         value: 'All',
         label: 'All Users',
-        description: 'Send to retail and business users',
+        description: 'Send to Customer and business users',
         icon: Users
     },
     {
         value: 'Retail',
-        label: 'Retail Users',
-        description: 'Send only to retail customers',
+        label: 'Customer Users',
+        description: 'Send only to Customer customers',
         icon: ShoppingBag
     },
     {

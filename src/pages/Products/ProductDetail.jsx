@@ -145,7 +145,7 @@ export const ProductDetail = () => {
                                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
                                     product.retailStatus === 'Active' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'
                                 )}>
-                                    Retail: {product.retailStatus || 'Active'}
+                                    Customer: {product.retailStatus || 'Active'}
                                 </span>
                                 <span className={cn(
                                     "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm",
@@ -248,7 +248,7 @@ export const ProductDetail = () => {
                                     <div className="p-2.5 bg-green-50 rounded-2xl">
                                         <TrendingUp className="w-6 h-6 text-green-600" />
                                     </div>
-                                    <h3 className="text-lg font-black text-slate-900">Retail Model</h3>
+                                    <h3 className="text-lg font-black text-slate-900">Customer Model</h3>
                                 </div>
                                 <span className="px-3 py-1 bg-green-100/50 text-green-700 text-[10px] font-black rounded-full uppercase tracking-widest border border-green-100">B2C</span>
                             </div>
@@ -261,7 +261,7 @@ export const ProductDetail = () => {
                                 ) : (
                                     <div className="p-8 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200 text-center">
                                         <IndianRupee className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                                        <p className="text-sm font-black text-slate-400">No Retail Prices Configured</p>
+                                        <p className="text-sm font-black text-slate-400">No Customer Prices Configured</p>
                                     </div>
                                 )}
                             </div>

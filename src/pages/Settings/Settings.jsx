@@ -310,7 +310,7 @@ export const Settings = () => {
                                         : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
                                 )}
                             >
-                                🛒 Retail
+                                🛒 Customer
                             </button>
                             <button
                                 onClick={() => setLogisticsTab('Business')}

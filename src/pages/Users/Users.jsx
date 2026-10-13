@@ -1,3 +1,4 @@
+import { customerText } from '../../utils/customerLabels';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -44,7 +45,7 @@ export const UsersManagement = ({ type }) => {
         const fetchUsers = async () => {
             if (users.length === 0) setLoading(true);
             try {
-                const { data } = await api.get(`/users?type=${type}`);
+                const { data } = await api.get(`/users?type=${customerText(type)}`);
                 if (type === 'Business') updateBusinessUsers(data);
                 else updateRetailUsers(data);
             } catch (error) {
@@ -67,7 +68,7 @@ export const UsersManagement = ({ type }) => {
     const handleRefresh = async () => {
         setLoading(true);
         try {
-            const { data } = await api.get(`/users?type=${type}`);
+            const { data } = await api.get(`/users?type=${customerText(type)}`);
             if (type === 'Business') updateBusinessUsers(data);
             else updateRetailUsers(data);
         } catch (error) {
@@ -144,7 +145,7 @@ export const UsersManagement = ({ type }) => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-black text-slate-900">{type} User Management</h2>
+                    <h2 className="text-2xl font-black text-slate-900">{customerText(type)} User Management</h2>
                     <p className="text-slate-500 font-medium text-sm">View details, order history, and manage account status.</p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -168,7 +169,7 @@ export const UsersManagement = ({ type }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total {type}s</p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total {customerText(type)}s</p>
                     <h3 className="text-2xl font-black text-slate-900">
                         {users.length}
                     </h3>

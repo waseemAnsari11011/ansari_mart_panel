@@ -1,3 +1,4 @@
+import { customerText } from '../../utils/customerLabels';
 import { formatPrice } from '../../utils/formatPrice';
 import { useEffect, useId, useState } from 'react';
 import api from '../../utils/api';
@@ -108,14 +109,14 @@ export default function DiscountSettings({ initialRules, onSave }) {
                 {rules.map((rule, index) => (
                     <div key={index} className="rounded-xl border border-slate-200 p-5 space-y-4">
                         <div className="grid md:grid-cols-3 gap-4 text-sm">
-                            <label>Offer name<input className={input} required maxLength={100} value={rule.name} onChange={e => change(index, 'name', e.target.value)} /></label>
-                            <label>Customers<select className={input} value={rule.customerType} onChange={e => change(index, 'customerType', e.target.value)}><option>All</option><option>Retail</option><option>Business</option></select></label>
+                            <label>Offer name<input className={input} required maxLength={100} value={customerText(rule.name)} onChange={e => change(index, 'name', e.target.value)} /></label>
+                            <label>Customers<select className={input} value={rule.customerType} onChange={e => change(index, 'customerType', e.target.value)}><option>All</option><option value="Retail">Customer</option><option>Business</option></select></label>
                             <label>Discount type<select className={input} value={rule.discountType} onChange={e => change(index, 'discountType', e.target.value)}><option value="fixed">Fixed amount (₹)</option><option value="percentage">Percentage (%)</option><option value="product_price">Product offer price (₹)</option></select></label>
                             {rule.discountType !== 'product_price' && <label>Discount ({rule.discountType === 'fixed' ? '₹' : '%'})<input className={input} type="number" min="0.01" max={rule.discountType === 'percentage' ? 100 : 10000000} step="0.01" required value={rule.value} onChange={e => change(index, 'value', e.target.value)} /></label>}
                             {rule.discountType !== 'product_price' && <label>Order value must exceed (₹)<input className={input} type="number" min="0" max="10000000" step="0.01" required value={rule.threshold} onChange={e => change(index, 'threshold', e.target.value)} /><span className="text-xs text-slate-500">₹{formatPrice(rule.threshold || 0)} or less: no offer. Above ₹{formatPrice(rule.threshold || 0)}: offer applies.</span></label>}
                         </div>
                         {rule.discountType === 'product_price' && <div className="space-y-3">
-                            <p className="text-sm text-slate-500">Select multiple products and set an offer price for each. Only ONE unit of ONE eligible product receives the offer per order, choosing the biggest saving. All remaining products and quantities stay at normal price. No order value requirement. Products must already be in the cart. For All customers, the option index applies to both Retail and Business.</p>
+                            <p className="text-sm text-slate-500">Select multiple products and set an offer price for each. Only ONE unit of ONE eligible product receives the offer per order, choosing the biggest saving. All remaining products and quantities stay at normal price. No order value requirement. Products must already be in the cart. For All customers, the option index applies to both Customer and Business.</p>
                             {productLoading && <p>Loading products…</p>}
                             {productError && <p role="alert">{productError} <button type="button" onClick={() => setProductReload(value => value + 1)}>Retry</button></p>}
                             {rule.productPrices.map((selected, productIndex) => {

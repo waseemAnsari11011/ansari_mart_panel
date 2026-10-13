@@ -1,3 +1,4 @@
+import { customerText } from '../../utils/customerLabels';
 import { formatPrice } from '../../utils/formatPrice';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -605,7 +606,7 @@ export const Orders = () => {
                                             : "text-slate-500 hover:text-slate-700"
                                     )}
                                 >
-                                    {tab === 'Retail' ? 'Retail (B2C)' : tab === 'Business' ? 'Business (B2B)' : tab}
+                                    {tab === 'Retail' ? 'Customer (B2C)' : tab === 'Business' ? 'Business (B2B)' : tab}
                                 </button>
                             ))}
                         </div>
@@ -631,7 +632,7 @@ export const Orders = () => {
                                             <Users className="w-4 h-4 text-blue-600" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Retail</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Customer</p>
                                             <p className="text-xl font-black text-blue-600 leading-none">{counts.retail}</p>
                                         </div>
                                     </div>
@@ -732,7 +733,7 @@ export const Orders = () => {
                                                             "text-[9px] font-black uppercase px-1.5 py-0.5 rounded",
                                                             order.type === 'Business' ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"
                                                         )}>
-                                                            {order.type || 'Retail'}
+                                                            {customerText(order.type || 'Retail')}
                                                         </span>
                                                     </div>
                                                 </div>
