@@ -45,7 +45,7 @@ export const UsersManagement = ({ type }) => {
         const fetchUsers = async () => {
             if (users.length === 0) setLoading(true);
             try {
-                const { data } = await api.get(`/users?type=${customerText(type)}`);
+                const { data } = await api.get(`/users?type=${type}`);
                 if (type === 'Business') updateBusinessUsers(data);
                 else updateRetailUsers(data);
             } catch (error) {
@@ -68,7 +68,7 @@ export const UsersManagement = ({ type }) => {
     const handleRefresh = async () => {
         setLoading(true);
         try {
-            const { data } = await api.get(`/users?type=${customerText(type)}`);
+            const { data } = await api.get(`/users?type=${type}`);
             if (type === 'Business') updateBusinessUsers(data);
             else updateRetailUsers(data);
         } catch (error) {
