@@ -73,8 +73,8 @@ export const AddProduct = () => {
                     setMrp(p.mrp || '');
                     setRetailStatus(p.retailStatus || 'Active');
                     setBusinessStatus(p.businessStatus || 'Active');
-                    setRetailPricing(p.retailPricing?.length > 0 ? p.retailPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: availableUnits[0] || '', stock: '' }]);
-                    setBusinessPricing(p.businessPricing?.length > 0 ? p.businessPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : [{ label: '', price: '', unit: availableUnits[0] || '', stock: '' }]);
+                    setRetailPricing(p.retailPricing?.length > 0 ? p.retailPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : []);
+                    setBusinessPricing(p.businessPricing?.length > 0 ? p.businessPricing.map(tp => ({ ...tp, price: tp.price.toString(), stock: tp.stock.toString() })) : []);
                     setImages((p.images || []).map(url => ({ preview: url, file: null })));
                 } else {
                     // Initialize with first available unit if adding
@@ -113,13 +113,20 @@ export const AddProduct = () => {
         setImages(prev => prev.filter((_, i) => i !== index));
     };
 
-    const validatePricing = (pricingData, type) => {
-        for (let i = 0; i < pricingData.length; i++) {
-            const current = pricingData[i];
+    const pricingRowError = (tier, type, index) => {
+        const prefix = `${type} Tier ${index + 1}: `;
+        if (String(tier.price).trim() === '' || String(tier.stock).trim() === '') return prefix + 'Enter price and stock.';
+        if (!Number.isFinite(Number(tier.price)) || Number(tier.price) <= 0) return prefix + 'Price must be greater than 0.';
+        if (!Number.isSafeInteger(Number(tier.stock)) || Number(tier.stock) < 0) return prefix + 'Stock must be a whole number of 0 or more.';
+        if (!availableUnits.includes(tier.unit || availableUnits[0])) return prefix + 'Select a valid unit.';
+        return null;
+    };
 
-            if (isNaN(parseFloat(current.price)) || isNaN(parseFloat(current.stock))) {
-                return `${type} Pricing Row ${i + 1}: Price and Stock must be numbers.`;
-            }
+    const validatePricing = (pricingData, type, status) => {
+        if (status === 'Active' && pricingData.length === 0) return `${type}: Add at least one valid pricing tier.`;
+        for (let i = 0; i < pricingData.length; i++) {
+            const message = pricingRowError(pricingData[i], type, i);
+            if (message) return message;
         }
         return null;
     };
@@ -128,10 +135,10 @@ export const AddProduct = () => {
         e.preventDefault();
         setError('');
 
-        const retailError = validatePricing(retailPricing, 'Retail');
+        const retailError = validatePricing(retailPricing, 'Retail', retailStatus);
         if (retailError) return setError(retailError);
 
-        const businessError = validatePricing(businessPricing, 'Business');
+        const businessError = validatePricing(businessPricing, 'Business', businessStatus);
         if (businessError) return setError(businessError);
 
         if (!mrp || parseFloat(mrp) <= 0) {
@@ -370,6 +377,9 @@ export const AddProduct = () => {
                             <div className="space-y-4">
                                 {retailPricing.map((tier, index) => (
                                     <div key={index} className="grid grid-cols-4 gap-3 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative group/tier">
+                                        {error && pricingRowError(tier, 'Retail', index) && (
+                                            <p role="alert" className="col-span-4 text-xs font-semibold text-red-600">{pricingRowError(tier, 'Retail', index)}</p>
+                                        )}
                                         <div className="space-y-1 text-center">
                                             <label className="text-[10px] font-black text-slate-500 uppercase">Unit</label>
                                             <select
@@ -432,7 +442,7 @@ export const AddProduct = () => {
                                         <button
                                             type="button"
                                             onClick={() => setRetailPricing(retailPricing.filter((_, i) => i !== index))}
-                                            disabled={retailPricing.length === 1}
+                                            aria-label={`Remove retail tier ${index + 1}`}
                                             className="absolute -top-2 -right-2 bg-white border border-slate-200 p-1.5 text-slate-300 hover:text-red-500 disabled:hidden transition-all rounded-full shadow-sm hover:shadow-md opacity-0 group-hover/tier:opacity-100"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
@@ -462,6 +472,9 @@ export const AddProduct = () => {
                             <div className="space-y-4">
                                 {businessPricing.map((tier, index) => (
                                     <div key={index} className="grid grid-cols-4 gap-3 items-end bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative group/tier">
+                                        {error && pricingRowError(tier, 'Business', index) && (
+                                            <p role="alert" className="col-span-4 text-xs font-semibold text-red-600">{pricingRowError(tier, 'Business', index)}</p>
+                                        )}
                                         <div className="space-y-1 text-center">
                                             <label className="text-[10px] font-black text-slate-500 uppercase">Unit</label>
                                             <select
@@ -524,7 +537,7 @@ export const AddProduct = () => {
                                         <button
                                             type="button"
                                             onClick={() => setBusinessPricing(businessPricing.filter((_, i) => i !== index))}
-                                            disabled={businessPricing.length === 1}
+                                            aria-label={`Remove business tier ${index + 1}`}
                                             className="absolute -top-2 -right-2 bg-white border border-slate-200 p-1.5 text-slate-300 hover:text-red-500 disabled:hidden transition-all rounded-full shadow-sm hover:shadow-md opacity-0 group-hover/tier:opacity-100"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
