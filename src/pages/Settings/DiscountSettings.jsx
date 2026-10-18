@@ -84,7 +84,7 @@ export default function DiscountSettings({ initialRules, onSave }) {
         setSaving(true);
         setMessage('');
         try {
-            const discountRules = rules.map(rule => ({ ...rule, value: rule.discountType === 'product_price' ? 0 : Number(rule.value), threshold: rule.discountType === 'product_price' ? 0 : Number(rule.threshold), minSubtotal: 0, maxSubtotal: null, productPrices: rule.discountType === 'product_price' ? rule.productPrices.map(item => ({ ...item, tierIndex: Number(item.tierIndex), offerPrice: Number(item.offerPrice) })) : [] }));
+            const discountRules = rules.map(rule => ({ ...rule, value: ['product_price', 'order_product_price'].includes(rule.discountType) ? 0 : Number(rule.value), threshold: rule.discountType === 'product_price' ? 0 : Number(rule.threshold), minSubtotal: 0, maxSubtotal: null, productPrices: ['product_price', 'order_product_price'].includes(rule.discountType) ? rule.productPrices.map(item => ({ ...item, tierIndex: Number(item.tierIndex), offerPrice: Number(item.offerPrice) })) : [] }));
             const { data } = await api.put('/settings/discounts', { discountRules });
             onSave(data.settings);
             setFailed(false);
@@ -101,7 +101,7 @@ export default function DiscountSettings({ initialRules, onSave }) {
         <form onSubmit={save} className="bg-white rounded-3xl border border-slate-200 p-8 text-slate-900 space-y-5">
             <div>
                 <h3 className="text-lg font-black">Automatic discounts</h3>
-                <p className="text-sm text-slate-500 mt-1">The largest eligible offer applies. Offers do not stack. Fixed and percentage offers require the items total to exceed the order value threshold. Product offers have no minimum order value and discount only one unit per order.</p>
+                <p className="text-sm text-slate-500 mt-1">The largest eligible offer applies. Offers do not stack. Fixed and percentage offers require the items total to exceed the order value threshold. Product offers discount one unit per order. Choose Product offer on order value to require a minimum items total; regular product offers have no minimum spend.</p>
                 <p className="text-sm text-slate-500 mt-1">First order means no previous orders, including cancelled orders. Existing orders retain the rules saved when placed.</p>
             </div>
             <fieldset disabled={saving} className="space-y-5">
@@ -111,12 +111,12 @@ export default function DiscountSettings({ initialRules, onSave }) {
                         <div className="grid md:grid-cols-3 gap-4 text-sm">
                             <label>Offer name<input className={input} required maxLength={100} value={customerText(rule.name)} onChange={e => change(index, 'name', e.target.value)} /></label>
                             <label>Customers<select className={input} value={rule.customerType} onChange={e => change(index, 'customerType', e.target.value)}><option>All</option><option value="Retail">Customer</option><option>Business</option></select></label>
-                            <label>Discount type<select className={input} value={rule.discountType} onChange={e => change(index, 'discountType', e.target.value)}><option value="fixed">Fixed amount (₹)</option><option value="percentage">Percentage (%)</option><option value="product_price">Product offer price (₹)</option></select></label>
-                            {rule.discountType !== 'product_price' && <label>Discount ({rule.discountType === 'fixed' ? '₹' : '%'})<input className={input} type="number" min="0.01" max={rule.discountType === 'percentage' ? 100 : 10000000} step="0.01" required value={rule.value} onChange={e => change(index, 'value', e.target.value)} /></label>}
-                            {rule.discountType !== 'product_price' && <label>Order value must exceed (₹)<input className={input} type="number" min="0" max="10000000" step="0.01" required value={rule.threshold} onChange={e => change(index, 'threshold', e.target.value)} /><span className="text-xs text-slate-500">₹{formatPrice(rule.threshold || 0)} or less: no offer. Above ₹{formatPrice(rule.threshold || 0)}: offer applies.</span></label>}
+                            <label>Discount type<select className={input} value={rule.discountType} onChange={e => change(index, 'discountType', e.target.value)}><option value="fixed">Fixed amount (₹)</option><option value="percentage">Percentage (%)</option><option value="product_price">Product offer price (₹)</option><option value="order_product_price">Product offer on order value (₹)</option></select></label>
+                            {!['product_price', 'order_product_price'].includes(rule.discountType) && <label>Discount ({rule.discountType === 'fixed' ? '₹' : '%'})<input className={input} type="number" min="0.01" max={rule.discountType === 'percentage' ? 100 : 10000000} step="0.01" required value={rule.value} onChange={e => change(index, 'value', e.target.value)} /></label>}
+                            {rule.discountType !== 'product_price' && <label>{rule.discountType === 'order_product_price' ? 'Minimum items total (₹)' : 'Order value must exceed (₹)'}<input className={input} type="number" min="0" max="10000000" step="0.01" required value={rule.threshold} onChange={e => change(index, 'threshold', e.target.value)} /><span className="text-xs text-slate-500">{rule.discountType === 'order_product_price' ? `Items total ₹${formatPrice(rule.threshold || 0)} or more: offer applies. Delivery is excluded.` : `Above ₹${formatPrice(rule.threshold || 0)}: offer applies.`}</span></label>}
                         </div>
-                        {rule.discountType === 'product_price' && <div className="space-y-3">
-                            <p className="text-sm text-slate-500">Select multiple products and set an offer price for each. Only ONE unit of ONE eligible product receives the offer per order, choosing the biggest saving. All remaining products and quantities stay at normal price. No order value requirement. Products must already be in the cart. For All customers, the option index applies to both Customer and Business.</p>
+                        {['product_price', 'order_product_price'].includes(rule.discountType) && <div className="space-y-3">
+                            <p className="text-sm text-slate-500">Select multiple products and set an offer price for each. Only ONE unit of ONE eligible product receives the offer per order, choosing the biggest saving. All remaining products and quantities stay at normal price. {rule.discountType === 'order_product_price' ? 'The items total must reach the minimum order value. Delivery charges do not count.' : 'No order value requirement.'} Products must already be in the cart. Set offer price to ₹0 for a free unit. For All customers, the option index applies to both Customer and Business.</p>
                             {productLoading && <p>Loading products…</p>}
                             {productError && <p role="alert">{productError} <button type="button" onClick={() => setProductReload(value => value + 1)}>Retry</button></p>}
                             {rule.productPrices.map((selected, productIndex) => {
@@ -150,6 +150,7 @@ export default function DiscountSettings({ initialRules, onSave }) {
                 ))}
                 <div className="flex flex-wrap gap-3 text-sm">
                     <button type="button" className="border rounded-lg p-3" disabled={rules.length >= 50} onClick={() => setRules([...rules, newRule()])}>+ Add offer</button>
+                    <button type="button" className="border rounded-lg p-3" disabled={rules.length >= 50} onClick={() => setRules([...rules, { ...newRule(), name: 'Free product on ₹1,000 shopping', discountType: 'order_product_price', threshold: 1000, value: 0, productPrices: [{ product: '', tierIndex: 0, offerPrice: 0 }] }])}>Example: Free product on ₹1,000</button>
                     <button type="button" className="border rounded-lg p-3" disabled={rules.length >= 50} onClick={() => setRules([...rules, { ...newRule(), name: '₹50 off orders above ₹2,000', threshold: 2000 }])}>Example: ₹50 off above ₹2,000</button>
                     <button type="button" className="border rounded-lg p-3" disabled={rules.length >= 50} onClick={() => setRules([...rules, { ...newRule(), name: '₹100 off your first order', value: 100, firstOrderOnly: true }])}>Example: ₹100 off first order</button>
                     <button type="submit" className="bg-green-600 text-white rounded-lg p-3 font-bold ml-auto">{saving ? 'Saving…' : 'Save discount rules'}</button>
