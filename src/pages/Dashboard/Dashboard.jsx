@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import DateRangeFilter from '../../components/DateRangeFilter';
+import OrderTrends from './OrderTrends';
 import { ALL_TIME, rangeParams } from '../../utils/dateRange';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -80,6 +81,8 @@ export const Dashboard = () => {
                     <DateRangeFilter value={dateRange} onChange={setDateRange} />
                 </div>
             </div>
+
+            <OrderTrends refreshKey={refreshKey} />
 
             {/* Stats Grid */}
             {error ? (
